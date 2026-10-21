@@ -1,0 +1,17 @@
+.dart_tool/
+build/
+.flutter-plugins-dependencies
+*.iml
+.idea/
+
+# Arquivos locais e credenciais
+.env
+.env.*
+!.env.example
+*.log
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.db
+backend/data/
+node_modules/
