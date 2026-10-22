@@ -38,7 +38,9 @@ Busca: `q` obrigatório; `intent=help` ou `donate`; `location` opcional filtra t
 
 Resposta: `{ "data": [ { "point": {...}, "resource": {...}, "alternative": false } ], "meta": {...} }`.
 
-Sem coordenadas, `distanceKm=null`. O Flutter ainda não envia coordenadas: use todas as distâncias. Não há geocodificação de endereço, e nomes/endereço/coordenadas do seed são ilustrativos.
+Sem coordenadas, `distanceKm=null`. O Flutter captura a localização do dispositivo
+e envia `lat` e `lon`, sem filtro textual de endereço. Não há geocodificação de
+endereço, e nomes/endereço/coordenadas do seed são ilustrativos.
 
 Ordem: correspondências de item/categoria antes de alternativas; em cada grupo, disponível primeiro, depois distância (quando calculada) e nome. Alternativas só aparecem se não houver resultado direto que satisfaça os filtros. Vocabulário inicial explícito: água mineral → Água, comida → Alimentos, sabonete → Higiene, agasalho → Abrigo. Não há busca semântica.
 
@@ -85,7 +87,7 @@ Configuração via variáveis `PORT`, `DB_PATH`, `CORS_ORIGINS` (origens separad
 - Telas Flutter de login, seleção de ponto, estoque, movimentação e histórico já implementadas. Veja GUIA_GESTAO.md na raiz.
 - Convites com expiração e aceitação para vincular gestores; recuperação e confirmação de e-mail.
 - CRUD de pontos, catálogo e equipe; contatos reais da instituição.
-- Localização/geocodificação e mapa real.
+- Geocodificação de endereço; a interface atual usa apenas coordenadas e não exibe mapa.
 - Paginação de busca/histórico, trilha de auditoria ampliada e migrações evolutivas.
 - Para publicação: configuração de ambiente, HTTPS, backup/recuperação, contas reais e revisão dos critérios de verificação. Não expor esta demonstração diretamente como serviço público.
 

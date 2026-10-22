@@ -1,0 +1,1 @@
+enum SearchIntent { help, donate }
