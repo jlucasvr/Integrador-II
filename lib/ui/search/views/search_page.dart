@@ -65,45 +65,54 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-      extendBody: true,
-      extendBodyBehindAppBar: true,
-      appBar: AppTopBar(
-          onManagement: () => openManagement(context, widget.managementApi)),
-      bottomNavigationBar: SearchDock(
-          formKey: _form,
-          controller: _item,
-          location: _location,
-          onSearch: _search,
-          controls: HomeSearchOptions(
-              intent: _intent,
-              onIntentChanged: (value) => setState(() => _intent = value),
-              onCategorySelected: (category) => _item.text = category),
-          onLocate: _location.capture),
-      body: Builder(
-          builder: (context) => SingleChildScrollView(
-              padding: EdgeInsets.only(
-                  top: MediaQuery.paddingOf(context).top,
-                  bottom: MediaQuery.paddingOf(context).bottom),
-              child: PageBody(
-                  child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                    Text('Como podemos ajudar?',
-                        style: Theme.of(context)
-                            .textTheme
-                            .headlineSmall!
-                            .copyWith(
-                                fontSize: 48,
-                                height: 1.15,
-                                letterSpacing: -1,
-                                fontWeight: FontWeight.w800)),
-                    const SizedBox(height: 16),
-                    const Text(
-                        'Encontre recursos ou um lugar para doar perto de você.',
-                        style: TextStyle(fontSize: 18, height: 1.5)),
-                    const SizedBox(height: 24),
-                    const Text(
-                        'Use sua localização para encontrar pontos de atendimento. Ao buscar, solicitaremos acesso à localização se necessário.'),
-                  ])))));
+  Widget build(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    final compact = size.width < 600 || size.height < 760;
+    final options = HomeSearchOptions(
+        intent: _intent,
+        onIntentChanged: (value) => setState(() => _intent = value),
+        onCategorySelected: (category) => _item.text = category);
+    return Scaffold(
+        extendBody: true,
+        extendBodyBehindAppBar: false,
+        resizeToAvoidBottomInset: false,
+        appBar: AppTopBar(
+            onManagement: () => openManagement(context, widget.managementApi)),
+        bottomNavigationBar: SearchDock(
+            formKey: _form,
+            controller: _item,
+            location: _location,
+            onSearch: _search,
+            controls: compact ? null : options,
+            onLocate: _location.capture),
+        body: Builder(
+            builder: (context) => SingleChildScrollView(
+                padding: EdgeInsets.only(
+                    top: 0, bottom: MediaQuery.paddingOf(context).bottom),
+                child: PageBody(
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                      Text('Como podemos ajudar?',
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineSmall!
+                              .copyWith(
+                                  fontSize: size.width < 360 ? 40 : 48,
+                                  height: 1.15,
+                                  letterSpacing: -1,
+                                  fontWeight: FontWeight.w800)),
+                      const SizedBox(height: 16),
+                      const Text(
+                          'Encontre recursos ou um lugar para doar perto de você.',
+                          style: TextStyle(fontSize: 18, height: 1.5)),
+                      const SizedBox(height: 24),
+                      const Text(
+                          'Use sua localização para encontrar pontos de atendimento. Ao buscar, solicitaremos acesso à localização se necessário.'),
+                      if (compact) ...[
+                        const SizedBox(height: 24),
+                        options,
+                      ],
+                    ])))));
+  }
 }

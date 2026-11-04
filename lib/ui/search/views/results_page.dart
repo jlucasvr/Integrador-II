@@ -92,7 +92,8 @@ class _ResultsPageState extends State<ResultsPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
       extendBody: true,
-      extendBodyBehindAppBar: true,
+      extendBodyBehindAppBar: false,
+      resizeToAvoidBottomInset: false,
       appBar: AppTopBar(
           onManagement: () => openManagement(context, widget.managementApi)),
       bottomNavigationBar: SearchDock(
@@ -105,8 +106,7 @@ class _ResultsPageState extends State<ResultsPage> {
           builder: (context) => Stack(children: [
                 SingleChildScrollView(
                     padding: EdgeInsets.only(
-                        top: MediaQuery.paddingOf(context).top,
-                        bottom: MediaQuery.paddingOf(context).bottom),
+                        top: 56, bottom: MediaQuery.paddingOf(context).bottom),
                     controller: _scroll,
                     child: PageBody(
                         child: FutureBuilder<List<SearchHit>>(
@@ -190,7 +190,7 @@ class _ResultsPageState extends State<ResultsPage> {
                           onTap: _toggleFilters,
                           child: const SizedBox.expand())),
                   Positioned(
-                      top: MediaQuery.paddingOf(context).top + 52,
+                      top: 60,
                       left: 0,
                       right: 0,
                       child: Align(
@@ -215,17 +215,18 @@ class _ResultsPageState extends State<ResultsPage> {
                                               clipBehavior: Clip.antiAlias,
                                               child: ConstrainedBox(
                                                   constraints: BoxConstraints(
-                                                      maxHeight:
-                                                          MediaQuery.sizeOf(context)
-                                                                  .height *
-                                                              .5),
+                                                      maxHeight: (MediaQuery.sizeOf(context)
+                                                                  .height -
+                                                              MediaQuery.viewInsetsOf(context)
+                                                                  .bottom -
+                                                              280)
+                                                          .clamp(80.0, 420.0)),
                                                   child: SingleChildScrollView(
-                                                      padding: const EdgeInsets.fromLTRB(
-                                                          16, 0, 16, 16),
+                                                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                                                       child: ResultFilters(intent: _viewModel.query.intent, radius: _viewModel.radius, availableOnly: _viewModel.availableOnly, onRadiusChanged: _viewModel.setRadius, onAvailableChanged: _viewModel.setAvailableOnly)))))))))),
                 ],
                 Positioned(
-                    top: MediaQuery.paddingOf(context).top - 8,
+                    top: 0,
                     left: 0,
                     right: 0,
                     child: Align(
