@@ -2,13 +2,11 @@
 
 Front-end em Flutter e API local em Node.js/Express com SQLite.
 
-Modo temporario de teste visual: em desenvolvimento, a busca publica usa dados
-mockados de todas as categorias e ignora coordenadas e filtros de distancia,
-mesmo com `API_BASE_URL` definido. A captura e a exibicao da localizacao continuam
-ativas. Para voltar a busca real, acrescente `--dart-define=MOCK_SEARCH=false`
-ao comando Flutter, junto de `API_BASE_URL`. Builds de release usam a API por
-padrao quando sua URL esta configurada; `MOCK_SEARCH=true` permite testar mocks
-explicitamente nesses builds.
+`iniciar.ps1 -Api` conecta a busca e a gestão à API local. Sem `-Api`, a busca
+abre em **Demonstração · dados fictícios**, com dados embutidos e sem GPS ou
+filtro de distância. Ao rodar o Flutter diretamente, `API_BASE_URL` seleciona a
+API por padrão. Use `MOCK_SEARCH=true` para escolher a demonstração de forma
+explícita, inclusive quando houver uma URL configurada para gestão.
 
 ## Organização do código
 
@@ -19,10 +17,16 @@ as responsabilidades de cada camada e as orientações para adicionar código.
 
 ## Executar
 
+Para uma instalação de desenvolvimento, use **Node.js 24 ou superior**,
+**Dart 3.11 ou superior** e um SDK **Flutter 3.38.1 ou superior** que inclua
+esse Dart. Coloque `flutter\bin` no `PATH` ou passe `-FlutterSdk` com a pasta
+do SDK. O script usa o SDK em `Downloads\flutter` como alternativa.
+
 Terminal 1:
 
 ```powershell
 cd 'C:\Users\João\Documents\Projetos\Projeto Integrador 2\backend'
+npm.cmd ci
 npm.cmd start
 ```
 
@@ -33,9 +37,13 @@ cd 'C:\Users\João\Documents\Projetos\Projeto Integrador 2'
 .\iniciar.ps1 -Api
 ```
 
-Se a API ja estava iniciada, reinicie seu processo para carregar as novas respostas de instituicao/responsavel. Dados demonstrativos ja criados; nao execute seed novamente neste banco.
+Reinicie o processo da API depois de atualizar o backend. O banco demonstrativo
+existente pode ser reutilizado. Execute `seed` somente em uma instalação nova com
+banco vazio.
 
-Sem -Api, a consulta utiliza os dados embutidos. O script usa um alias temporario para contornar erros do Flutter com acentos no caminho e restaura os caminhos das dependencias ao terminar.
+Em caminhos com caracteres fora de ASCII, o script cria um alias temporário
+para a compilação. A opção `-Offline` usa o cache local de pacotes Dart e
+continua exigindo as versões do lockfile.
 
 Se o PowerShell bloquear a execucao do script:
 
@@ -61,21 +69,25 @@ Guia detalhado: GUIA_GESTAO.md. Contrato da API e decisoes: backend/README.md.
 
 - Consulta publica sem conta, lista, filtros e detalhes.
 - Busca pela API ou demonstracao local.
-- Login, selecao dos pontos autorizados e pesquisa no estoque.
+- Login, seleção dos pontos autorizados, vínculo pelo catálogo e pesquisa no estoque.
 - Saldo, unidade, data e informacoes de publicacao.
 - Entrada, saida ou ajuste, com previa do saldo e controle de versao.
 - Historico com saldo anterior/resultante e nome do responsavel.
 - Tratamento de falhas, conflito de estoque, sessao expirada e logout.
 
-A busca usa a localizacao do dispositivo e envia latitude/longitude para a API,
-sem entrada manual de endereco. Permita o acesso a localizacao no navegador;
-use localhost no desenvolvimento e HTTPS em producao. A barra de busca fica fixa
-na home e nos resultados, com as coordenadas acima do campo. O mapa foi removido.
-Enderecos, coordenadas dos pontos e contatos do banco demonstrativo continuam
-ilustrativos; as distancias da API sao calculadas em linha reta. No modo sem API,
-as distancias dos dados embutidos continuam demonstrativas.
-Alterar as opcoes de publicacao pela interface, convites, recuperacao de senha e
-painel da prefeitura seguem pendentes.
+Na busca conectada, o navegador pode fornecer latitude e longitude. Use
+**Buscar sem localização** para consultar sem pedir acesso ao GPS.
+O termo e a intenção são preservados. Você pode habilitar a distância depois,
+usando o controle de localização nos resultados. A API calcula a distância em
+linha reta. Os dados do seed SQLite também são ilustrativos, embora o modo API
+permita consultar e editar os registros persistidos.
+Gestores podem cadastrar e editar pontos (incluindo contato, coordenadas e
+ativação) e configurar a publicação de cada item pelo botão Publicação no estoque.
+Para iniciar o estoque de um ponto novo, use **Vincular item do catálogo**.
+O item começa com saldo zero e fica oculto da consulta até a publicação explícita.
+Convites, recuperação de senha e painel da prefeitura seguem pendentes.
+PostgreSQL foi escolhido para implantação; esta versão ainda executa com SQLite.
+Escopo e roteiro das sprints: [SPRINTS.md](SPRINTS.md).
 
 ## Validacao
 
@@ -83,6 +95,36 @@ painel da prefeitura seguem pendentes.
 .\iniciar.ps1 -Action check -Api
 ```
 
-Analise, testes Flutter e compilacao web conectada a API. Testes da API: npm.cmd test dentro de backend. Os testes utilizam dados isolados e nao alteram o banco de demonstracao.
+O comando executa análise Dart, testes Flutter, testes Node, integração com
+SQLite em memória e compilação web em modo API.
 
-Existe tambem uma verificacao opcional em tool/management_live_check.dart, que exige uma API isolada com LIVE_API_BASE_URL; nao e executada pela suite padrao. O teste confirma entrada de estoque e atualizacao da busca publica.
+Para empacotar a versão conectada, indique a URL de destino explicitamente com
+`-ApiBaseUrl` ou com a variável `API_BASE_URL`. `-Action build -Api` rejeita a
+ausência da URL. `-Action build` sem `-Api` gera a demonstração.
+
+```powershell
+.\iniciar.ps1 -Action build -Api -ApiBaseUrl http://127.0.0.1:3000/api/v1
+```
+
+Para verificar a integração Dart → API → SQLite, instale as dependências do
+backend e execute na raiz:
+
+```powershell
+.\iniciar.ps1 -Action integration
+```
+
+O comando inicia uma API em porta local temporária com SQLite em memória,
+executa o teste de gestão e encerra a API. Verifica o percurso do cadastro de um
+ponto ao primeiro item publicado, incluindo reenvio, histórico e desativação.
+
+## Pacote de avaliação
+
+```powershell
+.\iniciar.ps1 -Action package
+```
+
+O comando gera uma pasta `build/entrega-local-…` com Flutter Web compilado,
+backend e [roteiro de avaliação](ENTREGA_LOCAL.md). Na pasta `backend` do pacote,
+execute `npm.cmd ci` e `npm.cmd run preview`. O terminal mostra o endereço e a
+senha de teste. A interface e a API compartilham a porta da prévia, que usa
+somente SQLite em memória com dados fictícios.

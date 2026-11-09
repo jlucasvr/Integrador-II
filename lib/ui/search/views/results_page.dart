@@ -6,6 +6,7 @@ import 'package:apoio_app/data/repositories/point_repository.dart';
 import 'package:apoio_app/data/services/location_service.dart';
 import 'package:apoio_app/ui/core/layout/page_body.dart';
 import 'package:apoio_app/ui/core/widgets/app_top_bar.dart';
+import 'package:apoio_app/ui/core/widgets/demo_search_notice.dart';
 import 'package:apoio_app/ui/search/view_models/location_view_model.dart';
 import 'package:apoio_app/ui/search/view_models/results_view_model.dart';
 import 'package:apoio_app/ui/search/widgets/hit_tile.dart';
@@ -78,7 +79,9 @@ class _ResultsPageState extends State<ResultsPage> {
   void _open(SearchHit hit) =>
       Navigator.of(context).push(MaterialPageRoute<void>(
           builder: (_) => DetailPage(
-              point: hit.point, managementApi: widget.managementApi)));
+              point: hit.point,
+              isDemo: widget.repository.isDemo,
+              managementApi: widget.managementApi)));
 
   @override
   void dispose() {
@@ -101,12 +104,13 @@ class _ResultsPageState extends State<ResultsPage> {
           controller: _item,
           location: _location,
           onSearch: _search,
-          onLocate: _locate),
+          onLocate: widget.repository.isDemo ? null : _locate),
       body: Builder(
           builder: (context) => Stack(children: [
                 SingleChildScrollView(
                     padding: EdgeInsets.only(
-                        top: 56, bottom: MediaQuery.paddingOf(context).bottom),
+                        top: _viewModel.canFilter ? 56 : 8,
+                        bottom: MediaQuery.paddingOf(context).bottom),
                     controller: _scroll,
                     child: PageBody(
                         child: FutureBuilder<List<SearchHit>>(
@@ -114,8 +118,7 @@ class _ResultsPageState extends State<ResultsPage> {
                             builder: (context, snapshot) {
                               final loading = snapshot.connectionState !=
                                   ConnectionState.done;
-                              final hits =
-                                  _viewModel.filter(snapshot.data ?? []);
+                              final hits = snapshot.data ?? [];
                               final count = !loading && !snapshot.hasError
                                   ? hits.length
                                   : null;
@@ -137,8 +140,16 @@ class _ResultsPageState extends State<ResultsPage> {
                                         style: Theme.of(context)
                                             .textTheme
                                             .headlineSmall),
-                                    const SizedBox(height: 16),
-                                    const SizedBox(height: 12),
+                                    if (widget.repository.isDemo) ...[
+                                      const SizedBox(height: 8),
+                                      const DemoSearchNotice(),
+                                    ] else if (!_viewModel
+                                        .canFilterByDistance) ...[
+                                      const SizedBox(height: 8),
+                                      const Text(
+                                          'Distância indisponível. Use sua localização para filtrar por distância.'),
+                                    ],
+                                    const SizedBox(height: 28),
                                     if (loading)
                                       const Padding(
                                           padding: EdgeInsets.all(32),
@@ -164,10 +175,6 @@ class _ResultsPageState extends State<ResultsPage> {
                                             'Nenhum ponto encontrado. Altere os filtros ou pesquise outro item na barra abaixo.'),
                                       ])
                                     else ...[
-                                      if (hits.every((hit) =>
-                                          hit.point.distanceKm == null))
-                                        const Text(
-                                            'Distâncias não disponíveis para estes pontos.'),
                                       if (hits.first.alternative)
                                         Padding(
                                             padding: const EdgeInsets.symmetric(
@@ -183,7 +190,7 @@ class _ResultsPageState extends State<ResultsPage> {
                                   ]);
                             }))),
                 // This overlay never contributes to the header or scroll layout.
-                if (_viewModel.showFilters) ...[
+                if (_viewModel.canFilter && _viewModel.showFilters) ...[
                   Positioned.fill(
                       child: GestureDetector(
                           behavior: HitTestBehavior.translucent,
@@ -223,25 +230,26 @@ class _ResultsPageState extends State<ResultsPage> {
                                                           .clamp(80.0, 420.0)),
                                                   child: SingleChildScrollView(
                                                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                                                      child: ResultFilters(intent: _viewModel.query.intent, radius: _viewModel.radius, availableOnly: _viewModel.availableOnly, onRadiusChanged: _viewModel.setRadius, onAvailableChanged: _viewModel.setAvailableOnly)))))))))),
+                                                      child: ResultFilters(intent: _viewModel.query.intent, showRadius: _viewModel.canFilterByDistance, radius: _viewModel.query.radiusKm, availableOnly: _viewModel.query.availableOnly, onRadiusChanged: _viewModel.setRadius, onAvailableChanged: _viewModel.setAvailableOnly)))))))))),
                 ],
-                Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    child: Align(
-                        alignment: Alignment.topCenter,
-                        child: ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 620),
-                            child: Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 20),
-                                child: Align(
-                                    alignment: Alignment.centerRight,
-                                    child: SizedBox(
-                                        height: 48,
-                                        child: FilterPill(
-                                            expanded: _viewModel.showFilters,
-                                            onPressed: _toggleFilters))))))),
+                if (_viewModel.canFilter)
+                  Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      child: Align(
+                          alignment: Alignment.topCenter,
+                          child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 620),
+                              child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 20),
+                                  child: Align(
+                                      alignment: Alignment.centerRight,
+                                      child: SizedBox(
+                                          height: 48,
+                                          child: FilterPill(
+                                              expanded: _viewModel.showFilters,
+                                              onPressed: _toggleFilters))))))),
               ])));
 }

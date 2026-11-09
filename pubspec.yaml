@@ -3,7 +3,8 @@ description: Plataforma de consulta a pontos de apoio e doações.
 publish_to: none
 version: 0.1.0+1
 environment:
-  sdk: '>=3.4.0 <4.0.0'
+  sdk: '>=3.11.0 <4.0.0'
+  flutter: '>=3.38.1'
 dependencies:
   http: ^1.2.0
   flutter:

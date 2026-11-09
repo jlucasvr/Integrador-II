@@ -34,13 +34,13 @@ function integer(value, field) {
 }
 function origin(query) {
   if (query.lat === undefined && query.lon === undefined) return null;
-  const lat = Number(query.lat),
-    lon = Number(query.lon);
+  const coordinate = (value) => {
+    if (typeof value === "number") return value;
+    if (typeof value === "string" && value.trim()) return Number(value);
+    return NaN;
+  };
+  const lat = coordinate(query.lat), lon = coordinate(query.lon);
   if (
-    query.lat === undefined ||
-    query.lon === undefined ||
-    query.lat === "" ||
-    query.lon === "" ||
     !Number.isFinite(lat) ||
     !Number.isFinite(lon) ||
     Math.abs(lat) > 90 ||
@@ -83,6 +83,7 @@ function publicPoint(db, id, from = null) {
     address: p.address,
     region: p.region,
     hours: p.hours,
+    contact: p.contact,
     latitude: p.latitude,
     longitude: p.longitude,
     distanceKm: distance(from, p),
@@ -122,7 +123,7 @@ export function createApp(db, { allowedOrigins = [] } = {}) {
       res.set("Access-Control-Allow-Origin", o);
       res.vary("Origin");
     }
-    res.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    res.set("Access-Control-Allow-Headers", "Content-Type, Authorization, Idempotency-Key");
     res.set("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS");
     res.set("Cache-Control", "no-store");
     if (req.method === "OPTIONS") return res.sendStatus(204);
@@ -178,6 +179,7 @@ export function createApp(db, { allowedOrigins = [] } = {}) {
   );
   app.get("/api/v1/points", (req, res) => {
     const q = normalize(text(req.query.q, "q", 100));
+    if (!q) fail(400, "VALIDATION_ERROR", "Informe um item ou categoria.");
     const intent = req.query.intent ?? "help";
     if (!["help", "donate"].includes(intent))
       fail(400, "VALIDATION_ERROR", "intent deve ser help ou donate.");
@@ -222,14 +224,17 @@ export function createApp(db, { allowedOrigins = [] } = {}) {
       (req.query.availableOnly !== "true" ||
         intent === "donate" ||
         r.available);
-    let hits = points.flatMap((p) => {
-      const r = p.resources.find(
-        (r) =>
-          eligible(r) &&
-          (normalize(r.name).includes(q) || normalize(r.category) === q),
-      );
-      return r ? [{ point: p, resource: r, alternative: false }] : [];
+    const collectHits = (matches, alternative) => points.flatMap((point) => {
+      const candidates = point.resources.filter((r) => eligible(r) && matches(r));
+      const resource = intent === "help"
+        ? candidates.find((r) => r.available) ?? candidates[0]
+        : candidates[0];
+      return resource ? [{ point, resource, alternative }] : [];
     });
+    let hits = collectHits(
+      (r) => normalize(r.name).includes(q) || normalize(r.category) === q,
+      false,
+    );
     if (!hits.length) {
       const category = {
         "agua mineral": "Água",
@@ -237,13 +242,7 @@ export function createApp(db, { allowedOrigins = [] } = {}) {
         sabonete: "Higiene",
         agasalho: "Abrigo",
       }[q];
-      if (category)
-        hits = points.flatMap((p) => {
-          const r = p.resources.find(
-            (r) => eligible(r) && r.category === category,
-          );
-          return r ? [{ point: p, resource: r, alternative: true }] : [];
-        });
+      if (category) hits = collectHits((r) => r.category === category, true);
     }
     hits.sort(
       (a, b) =>
@@ -324,6 +323,75 @@ export function createApp(db, { allowedOrigins = [] } = {}) {
         .all(req.user.id),
     });
   });
+  app.get('/api/v1/manage/my-institutions', authenticate, (req, res) => {
+    if (req.user.role !== 'manager') fail(403, 'FORBIDDEN', 'Acesso restrito ao gestor.');
+    res.json({data: db.prepare(`SELECT i.id,i.name FROM institutions i JOIN memberships m ON m.institution_id=i.id WHERE m.user_id=? ORDER BY i.name`).all(req.user.id)});
+  });
+  function pointFields(b) {
+    const coords = origin({lat: b.latitude, lon: b.longitude});
+    if (!coords || typeof b.latitude !== 'number' || typeof b.longitude !== 'number') fail(400, 'VALIDATION_ERROR', 'Informe latitude e longitude numéricas.');
+    if (typeof b.active !== 'boolean') fail(400, 'VALIDATION_ERROR', 'Informe se o ponto está ativo.');
+    if (typeof b.contact !== 'string' || b.contact.length > 250) fail(400, 'VALIDATION_ERROR', 'Contato deve ter até 250 caracteres.');
+    return [text(b.name,'Nome'), text(b.address,'Endereço',300), text(b.region,'Região'), text(b.hours,'Horário',250), coords.lat, coords.lon, Number(b.active), b.contact.trim()];
+  }
+  app.post('/api/v1/manage/points', authenticate, (req, res) => {
+    const b = req.body ?? {};
+    if (req.user.role !== 'manager') fail(403, 'FORBIDDEN', 'Acesso restrito ao gestor.');
+    const institutionId = text(b.institution_id, 'institution_id');
+    const key = req.get('Idempotency-Key');
+    if (key !== undefined && !/^[A-Za-z0-9_-]{1,128}$/.test(key)) {
+      fail(400, 'VALIDATION_ERROR', 'Chave de cadastro inválida.');
+    }
+
+    function createPoint() {
+      if (!db.prepare('SELECT 1 FROM memberships WHERE user_id=? AND institution_id=?').get(req.user.id, institutionId)) {
+        fail(403, 'FORBIDDEN', 'Você não administra esta instituição.');
+      }
+      const values = pointFields(b);
+      const fingerprint = key && createHash('sha256')
+        .update(JSON.stringify([institutionId, ...values])).digest('hex');
+      if (key) {
+        const saved = db.prepare('SELECT point_id, request_hash FROM point_creations WHERE user_id=? AND request_key=?')
+          .get(req.user.id, key);
+        if (saved) {
+          if (saved.request_hash !== fingerprint) {
+            fail(409, 'IDEMPOTENCY_CONFLICT', 'Esta tentativa já foi usada com outros dados. Confira a lista de pontos.');
+          }
+          return saved.point_id;
+        }
+      }
+
+      const id = newId();
+      db.prepare(`INSERT INTO points(id,institution_id,name,address,region,hours,latitude,longitude,active,contact)
+        VALUES (?,?,?,?,?,?,?,?,?,?)`).run(id, institutionId, ...values);
+      if (key) {
+        db.prepare('INSERT INTO point_creations(user_id, request_key, request_hash, point_id) VALUES (?,?,?,?)')
+          .run(req.user.id, key, fingerprint, id);
+      }
+      return id;
+    }
+
+    if (!key) return res.status(201).json({ data: { id: createPoint() } });
+
+    db.exec('BEGIN IMMEDIATE');
+    let id;
+    try {
+      id = createPoint();
+      db.exec('COMMIT');
+    } catch (error) {
+      db.exec('ROLLBACK');
+      throw error;
+    }
+    res.status(201).json({ data: { id } });
+  });
+  app.patch('/api/v1/manage/points/:id', authenticate, (req,res) => {
+    canManage(req.user,req.params.id);
+    const b = req.body ?? {}, values = pointFields(b);
+    const version = integer(b.expectedVersion,'expectedVersion');
+    const result = db.prepare('UPDATE points SET name=?,address=?,region=?,hours=?,latitude=?,longitude=?,active=?,contact=?,version=version+1 WHERE id=? AND version=?').run(...values,req.params.id,version);
+    if (!result.changes) fail(409,'STALE_POINT','Ponto atualizado por outro gestor. Volte à lista e recarregue antes de editar.');
+    res.json({data:{id:req.params.id,version:version+1}});
+  });
   app.get("/api/v1/manage/points/:id/stock", authenticate, (req, res) => {
     canManage(req.user, req.params.id);
     res.json({
@@ -334,6 +402,37 @@ export function createApp(db, { allowedOrigins = [] } = {}) {
         )
         .all(req.params.id),
     });
+  });
+  app.get("/api/v1/manage/points/:id/catalog", authenticate, (req, res) => {
+    const pointId = req.params.id;
+    canManage(req.user, pointId);
+    const data = db.prepare(`
+      SELECT i.id, i.name, i.category, i.unit FROM items i
+      WHERE NOT EXISTS (
+        SELECT 1 FROM stocks s WHERE s.point_id=? AND s.item_id=i.id
+      ) ORDER BY i.name, i.id
+    `).all(pointId);
+    res.json({ data });
+  });
+  app.post("/api/v1/manage/points/:id/stock", authenticate, (req, res) => {
+    const pointId = req.params.id;
+    canManage(req.user, pointId);
+    const itemId = text(req.body?.item_id, "item_id");
+    if (!db.prepare("SELECT 1 FROM items WHERE id=?").get(itemId)) {
+      fail(404, "CATALOG_ITEM_NOT_FOUND", "Item não encontrado no catálogo.");
+    }
+
+    const id = newId();
+    const result = db.prepare(`
+      INSERT INTO stocks(id, point_id, item_id, quantity, public_quantity,
+        visible, distributable, accepts_donation, version, updated_at)
+      VALUES (?, ?, ?, 0, 0, 0, 0, 0, 0, ?)
+      ON CONFLICT(point_id, item_id) DO NOTHING
+    `).run(id, pointId, itemId, new Date().toISOString());
+    if (!result.changes) {
+      fail(409, "ITEM_ALREADY_LINKED", "Este item já está vinculado ao estoque deste ponto.");
+    }
+    res.status(201).json({ data: { id } });
   });
   function managedStock(req) {
     const stock = db

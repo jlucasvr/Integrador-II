@@ -3,16 +3,19 @@ import 'package:apoio_app/data/models/support_point.dart';
 import 'package:apoio_app/data/repositories/management_repository.dart';
 import 'package:apoio_app/ui/core/layout/page_body.dart';
 import 'package:apoio_app/ui/core/widgets/app_top_bar.dart';
+import 'package:apoio_app/ui/core/widgets/demo_search_notice.dart';
 import 'package:apoio_app/ui/support_points/widgets/resource_table.dart';
 import 'package:flutter/material.dart';
 
 class DetailPage extends StatelessWidget {
   final SupportPoint point;
   final ManagementRepository? managementApi;
-  const DetailPage({super.key, required this.point, this.managementApi});
-  void _explain(BuildContext context, String message) =>
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(message)));
+  final bool isDemo;
+  const DetailPage(
+      {super.key,
+      required this.point,
+      this.managementApi,
+      this.isDemo = false});
   @override
   Widget build(BuildContext context) => Scaffold(
       extendBodyBehindAppBar: true,
@@ -29,15 +32,14 @@ class DetailPage extends StatelessWidget {
                     Text(point.name,
                         style: Theme.of(context).textTheme.headlineSmall),
                     Text(point.institution),
+                    if (isDemo) ...[
+                      const SizedBox(height: 8),
+                      const DemoSearchNotice(),
+                    ],
                     const SizedBox(height: 24),
                     Text('Endereço e atendimento',
                         style: Theme.of(context).textTheme.titleLarge),
-                    Text('${point.address}\nCidade Exemplo\n${point.hours}'),
-                    OutlinedButton.icon(
-                        onPressed: () => _explain(context,
-                            'Rotas externas serão integradas depois. O endereço é fictício.'),
-                        icon: const Icon(Icons.directions_outlined),
-                        label: const Text('Como chegar · demonstração')),
+                    Text('${point.address}\n${point.region}\n${point.hours}'),
                     const SizedBox(height: 24),
                     Text('Recursos para distribuição',
                         style: Theme.of(context).textTheme.titleLarge),
@@ -61,10 +63,11 @@ class DetailPage extends StatelessWidget {
                             'Antes de se deslocar, confirme disponibilidade e atendimento pelos canais da instituição.',
                             style: TextStyle(fontSize: 12))),
                     const SizedBox(height: 12),
-                    FilledButton(
-                        onPressed: () => _explain(context,
-                            'Contato externo ainda não integrado. Nenhuma mensagem foi enviada.'),
-                        child: const Text('Consultar contato da instituição')),
+                    Text('Contato',
+                        style: Theme.of(context).textTheme.titleMedium),
+                    SelectableText(point.contact.isEmpty
+                        ? 'Contato não informado.'
+                        : point.contact),
                     const SizedBox(height: 24),
                     const Text(
                         'A plataforma não realiza transporte ou entrega.'),

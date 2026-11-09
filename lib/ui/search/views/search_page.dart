@@ -6,6 +6,7 @@ import 'package:apoio_app/data/repositories/point_repository.dart';
 import 'package:apoio_app/data/services/location_service.dart';
 import 'package:apoio_app/ui/core/layout/page_body.dart';
 import 'package:apoio_app/ui/core/widgets/app_top_bar.dart';
+import 'package:apoio_app/ui/core/widgets/demo_search_notice.dart';
 import 'package:apoio_app/ui/search/view_models/location_view_model.dart';
 import 'package:apoio_app/ui/search/views/results_page.dart';
 import 'package:apoio_app/ui/search/widgets/home_search_options.dart';
@@ -42,17 +43,22 @@ class _SearchPageState extends State<SearchPage> {
 
   void _refresh() => setState(() {});
 
-  Future<void> _search() async {
+  Future<void> _search({bool withoutLocation = false}) async {
     if (_location.busy || !_form.currentState!.validate()) return;
     FocusScope.of(context).unfocus();
-    if (_location.coordinates == null && !await _location.capture()) return;
+    final useLocation = !withoutLocation && !widget.repository.isDemo;
+    if (useLocation &&
+        _location.coordinates == null &&
+        !await _location.capture()) {
+      return;
+    }
     if (!mounted) return;
     await Navigator.of(context).push(MaterialPageRoute<void>(
         builder: (_) => ResultsPage(
             repository: widget.repository,
             locationService: widget.locationService,
             query: SearchQuery(_item.text.trim(), _intent,
-                coordinates: _location.coordinates!),
+                coordinates: useLocation ? _location.coordinates : null),
             managementApi: widget.managementApi,
             onTermChanged: (term) => _item.text = term)));
   }
@@ -83,8 +89,11 @@ class _SearchPageState extends State<SearchPage> {
             controller: _item,
             location: _location,
             onSearch: _search,
+            onSearchWithoutLocation: widget.repository.isDemo
+                ? null
+                : () => _search(withoutLocation: true),
             controls: compact ? null : options,
-            onLocate: _location.capture),
+            onLocate: widget.repository.isDemo ? null : _location.capture),
         body: Builder(
             builder: (context) => SingleChildScrollView(
                 padding: EdgeInsets.only(
@@ -103,12 +112,17 @@ class _SearchPageState extends State<SearchPage> {
                                   letterSpacing: -1,
                                   fontWeight: FontWeight.w800)),
                       const SizedBox(height: 16),
-                      const Text(
-                          'Encontre recursos ou um lugar para doar perto de você.',
+                      if (widget.repository.isDemo) ...[
+                        const DemoSearchNotice(),
+                        const SizedBox(height: 8),
+                      ],
+                      const Text('Encontre recursos ou um lugar para doar.',
                           style: TextStyle(fontSize: 18, height: 1.5)),
-                      const SizedBox(height: 24),
-                      const Text(
-                          'Use sua localização para encontrar pontos de atendimento. Ao buscar, solicitaremos acesso à localização se necessário.'),
+                      if (!widget.repository.isDemo) ...[
+                        const SizedBox(height: 24),
+                        const Text(
+                            'Use sua localização para ver pontos próximos.'),
+                      ],
                       if (compact) ...[
                         const SizedBox(height: 24),
                         options,

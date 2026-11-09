@@ -63,4 +63,33 @@ void main() {
             coordinates: GeoCoordinates(-23.55, -46.63))),
         throwsException);
   });
+  test('envia os filtros aplicáveis junto à consulta', () async {
+    final queries = <Map<String, String>>[];
+    final repository = ApiPointRepository('http://localhost:3000/api/v1',
+        client: MockClient((request) async {
+      queries.add(request.url.queryParameters);
+      return http.Response('{"data":[]}', 200);
+    }));
+    addTearDown(repository.dispose);
+    await repository.search(const SearchQuery('Água', SearchIntent.help,
+        coordinates: GeoCoordinates(-23.55, -46.63),
+        radiusKm: 2,
+        availableOnly: true));
+    await repository.search(const SearchQuery('Água', SearchIntent.help,
+        radiusKm: 2, availableOnly: true));
+    await repository.search(
+        const SearchQuery('Água', SearchIntent.donate, availableOnly: true));
+    expect(queries, [
+      {
+        'q': 'Água',
+        'intent': 'help',
+        'lat': '-23.55',
+        'lon': '-46.63',
+        'radiusKm': '2.0',
+        'availableOnly': 'true'
+      },
+      {'q': 'Água', 'intent': 'help', 'availableOnly': 'true'},
+      {'q': 'Água', 'intent': 'donate'},
+    ]);
+  });
 }

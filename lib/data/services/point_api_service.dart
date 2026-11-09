@@ -13,11 +13,17 @@ class PointApiService {
         _client = client ?? http.Client();
 
   Future<List<Map<String, dynamic>>> search(SearchQuery query) async {
+    final coordinates = query.coordinates;
     final uri = baseUrl.resolve('points').replace(queryParameters: {
       'q': query.term,
-      'lat': query.coordinates.latitude.toString(),
-      'lon': query.coordinates.longitude.toString(),
+      if (coordinates != null) ...{
+        'lat': coordinates.latitude.toString(),
+        'lon': coordinates.longitude.toString(),
+        if (query.radiusKm != null) 'radiusKm': query.radiusKm.toString(),
+      },
       'intent': query.intent == SearchIntent.help ? 'help' : 'donate',
+      if (query.availableOnly && query.intent == SearchIntent.help)
+        'availableOnly': 'true',
     });
     final response =
         await _client.get(uri).timeout(const Duration(seconds: 10));

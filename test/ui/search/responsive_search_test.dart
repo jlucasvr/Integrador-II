@@ -19,6 +19,8 @@ void main() {
           locationService: FakeLocationService()));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
+      expect(find.text('Demonstração · dados fictícios'), findsOneWidget);
+      expect(find.byKey(const ValueKey('location-control')), findsNothing);
       final submit = find.byKey(const ValueKey('search-submit'));
       final field = find.byKey(const ValueKey('search-term'));
       await tester.ensureVisible(find.text('Medicamentos'));
@@ -44,6 +46,7 @@ void main() {
       await tester.tap(filter);
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
+      expect(find.text('Distância máxima'), findsNothing);
       await tester.ensureVisible(find.text('Somente disponíveis'));
       await tester.tap(find.text('Somente disponíveis'));
       await tester.pumpAndSettle();

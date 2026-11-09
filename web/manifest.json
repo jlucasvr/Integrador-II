@@ -1,11 +1,11 @@
 {
-    "name": "apoio_app",
-    "short_name": "apoio_app",
+    "name": "Plataforma de Apoio",
+    "short_name": "Apoio",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#FFFFFF",
+    "theme_color": "#292929",
+    "description": "Consulta de recursos e pontos de apoio.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

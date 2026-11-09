@@ -19,12 +19,14 @@ void main() {
     await tester.tap(search);
     await tester.pumpAndSettle();
     expect(find.text('Centro de Apoio Central'), findsOneWidget);
+    expect(find.text('Demonstração · dados fictícios'), findsOneWidget);
     expect(find.text('120 garrafas de 1 L disponíveis'), findsNothing);
     final details = find.text('Ver detalhes do ponto').first;
     await Scrollable.ensureVisible(tester.element(details), alignment: .35);
     await tester.tap(details);
     await tester.pumpAndSettle();
     expect(find.text('Ponto de atendimento'), findsOneWidget);
+    expect(find.text('Demonstração · dados fictícios'), findsOneWidget);
     expect(find.text('Endereço e atendimento'), findsOneWidget);
     expect(find.text('120 garrafas de 1 L disponíveis'), findsOneWidget);
   });

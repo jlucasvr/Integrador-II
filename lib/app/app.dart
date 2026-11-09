@@ -23,6 +23,26 @@ class ApoioApp extends StatelessWidget {
       supportedLocales: const [Locale('pt', 'BR')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
       theme: wireframeTheme(),
+      builder: const bool.fromEnvironment('LOCAL_EVALUATION')
+          ? (context, child) => Column(children: [
+                Material(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  child: const SafeArea(
+                    bottom: false,
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: Padding(
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        child: Text('Avaliação local · dados fictícios',
+                            textAlign: TextAlign.center),
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(child: child!),
+              ])
+          : null,
       home: SearchPage(
           repository: repository,
           managementApi: managementApi,

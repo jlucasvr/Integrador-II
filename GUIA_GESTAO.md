@@ -18,15 +18,15 @@ cd 'C:\Users\João\Documents\Projetos\Projeto Integrador 2'
 .\iniciar.ps1 -Api
 ```
 
-Na tela pública, clique em **Gestão**. Entre com `gestor@example.test`; a senha está no arquivo local `backend/data/demo-access.txt`. A conta gestora de demonstração administra somente o Centro de Apoio Central. Não compartilhe o arquivo de credenciais.
+Na tela pública, clique em **Gestão**. Entre com `gestor@example.test`. A senha está no arquivo local `backend/data/demo-access.txt`. A conta demonstrativa administra os pontos da instituição do Centro de Apoio Central.
 
 ## Experimentar o fluxo
 
-1. Entre e selecione Centro de Apoio Central.
-2. Encontre Água potável no estoque e clique em Movimentar.
-3. Escolha Entrada, informe uma quantidade e confira o saldo resultante antes de confirmar.
-4. Abra Histórico e confira saldo anterior, saldo resultante e responsável.
-5. Volte à consulta pública e refaça a busca para conferir a atualização.
+1. Em **Meus pontos**, cadastre um ponto ativo para testar e abra seu estoque.
+2. Escolha **Vincular item do catálogo**, busque **Água potável** e selecione **Vincular**. Confira o saldo zero e o aviso de item oculto.
+3. Abra **Movimentar**, escolha **Entrada**, informe uma quantidade e confirme. Confira o saldo anterior, o saldo resultante e o responsável em **Histórico**.
+4. Em **Publicação**, habilite a exibição na consulta pública e a distribuição. Habilite a quantidade pública se quiser mostrá-la.
+5. Volte à consulta pública e pesquise **Água potável**. Confira o ponto cadastrado e a disponibilidade nos resultados.
 
 As alterações no aplicativo usam o banco local e persistem. Para experimentar sem alterar esse banco, os testes usam dados isolados.
 
@@ -40,9 +40,9 @@ A consulta pública segue sem login. No modo sem API (`iniciar.ps1`), Gestão ex
 
 ## O que está pronto
 
-Login, seleção de pontos, pesquisa de itens no estoque, saldo e informações de publicação, entrada/saída/ajuste, prévia do saldo, histórico com responsável, logout e tratamento de sessão/conexão/conflitos.
+Login, cadastro e edição de pontos, vínculo de itens do catálogo, configuração de publicação, movimentações com prévia de saldo, histórico e tratamento de sessão e conflitos.
 
-Os dados iniciais são fictícios; mapa e contatos continuam demonstrativos. Alterar configurações públicas de um item pela interface, convites, recuperação de senha e painel da prefeitura continuam para as próximas etapas.
+Os dados iniciais são fictícios. Convites, recuperação de senha e painel da prefeitura seguem pendentes.
 
 ## Verificação
 

@@ -1,53 +1,117 @@
-param([ValidateSet('run', 'check', 'build')][string]$Action = 'run', [switch]$Api)
+param(
+    [ValidateSet('run', 'check', 'build', 'integration', 'package')][string]$Action = 'run',
+    [switch]$Api,
+    [string]$ApiBaseUrl = $env:API_BASE_URL,
+    [string]$FlutterSdk,
+    [switch]$Offline
+)
 $ErrorActionPreference = 'Stop'
-# Alias temporario para contornar erros do Flutter com acentos no caminho.
-$profileRoot = $env:USERPROFILE.TrimEnd('\')
-if (-not $PSScriptRoot.StartsWith($profileRoot + '\', [StringComparison]::OrdinalIgnoreCase)) {
-    throw 'Este script espera o projeto dentro da pasta do usuario.'
-}
-$sdkPath = Join-Path $profileRoot 'Downloads\flutter\bin\flutter.bat'
-if (-not (Test-Path -LiteralPath $sdkPath)) {
-    throw 'Flutter nao encontrado em Downloads\flutter. Atualize sdkPath neste script.'
-}
-$driveName = @('R','S','T','U','V','W','X','Y','Z') | Where-Object {
-    -not (Test-Path "${_}:\")
-} | Select-Object -First 1
-if (-not $driveName) { throw 'Nenhuma letra de unidade livre para o alias temporario.' }
-& subst "${driveName}:" $profileRoot
-if ($LASTEXITCODE -ne 0) { throw 'Nao foi possivel criar o alias temporario.' }
-$relativeProject = $PSScriptRoot.Substring($profileRoot.Length)
-$projectAlias = "${driveName}:$relativeProject"
-$flutterAlias = "${driveName}:\Downloads\flutter\bin\flutter.bat"
-try {
-    Push-Location -LiteralPath $projectAlias
-    & $flutterAlias pub get
-    if ($LASTEXITCODE -ne 0) { throw 'Falha ao obter dependencias.' }
-    if ($Action -eq 'check') {
-        & $flutterAlias analyze
-        if ($LASTEXITCODE -ne 0) { throw 'Falha na analise.' }
-        & $flutterAlias test
-        if ($LASTEXITCODE -ne 0) { throw 'Falha nos testes.' }
+if ($Action -eq 'package') {
+    $searchDefines = @('--dart-define=API_BASE_URL=/api/v1', '--dart-define=MOCK_SEARCH=false', '--dart-define=LOCAL_EVALUATION=true')
+} elseif ($Api -and $Action -ne 'integration') {
+    if ([string]::IsNullOrWhiteSpace($ApiBaseUrl)) {
+        if ($Action -eq 'build') { throw 'Informe -ApiBaseUrl ou defina API_BASE_URL para gerar o build em modo API.' }
+        $ApiBaseUrl = 'http://127.0.0.1:3000/api/v1'
     }
-    if ($Action -in @('check','build')) {
+    [Uri]$parsedApiUrl = $null
+    if (-not [Uri]::TryCreate($ApiBaseUrl, [UriKind]::Absolute, [ref]$parsedApiUrl) -or
+        $parsedApiUrl.Scheme -notin @('http', 'https') -or -not $parsedApiUrl.Host -or
+        $parsedApiUrl.UserInfo -or $parsedApiUrl.Query -or $parsedApiUrl.Fragment) {
+        throw 'Informe uma URL HTTP ou HTTPS da API sem credenciais, consulta ou fragmento.'
+    }
+    $searchDefines = @("--dart-define=API_BASE_URL=$($parsedApiUrl.AbsoluteUri)", '--dart-define=MOCK_SEARCH=false')
+} else {
+    $searchDefines = @('--dart-define=MOCK_SEARCH=true')
+}
+if ($FlutterSdk) {
+    $sdkPath = Join-Path $FlutterSdk 'bin\flutter.bat'
+} else {
+    $flutterCommand = Get-Command flutter.bat -ErrorAction SilentlyContinue
+    $sdkPath = if ($flutterCommand) { $flutterCommand.Source } else {
+        Join-Path $env:USERPROFILE 'Downloads\flutter\bin\flutter.bat'
+    }
+}
+if (-not (Test-Path -LiteralPath $sdkPath)) {
+    throw 'Flutter nao encontrado. Adicione flutter\bin ao PATH ou informe -FlutterSdk com a pasta do SDK.'
+}
+$sdkBin = Split-Path -Parent (Resolve-Path -LiteralPath $sdkPath).Path
+$sdkRoot = Split-Path -Parent $sdkBin
+$aliases = [System.Collections.Generic.List[string]]::new()
+function Get-AsciiPath([string]$Directory) {
+    if ($Directory -notmatch '[^\x00-\x7F]') { return $Directory }
+    $drive = @('R','S','T','U','V','W','X','Y','Z') | Where-Object {
+        -not (Test-Path "${_}:\") -and -not $aliases.Contains("${_}:")
+    } | Select-Object -First 1
+    if (-not $drive) { throw 'Nenhuma letra de unidade livre para o alias temporario.' }
+    & subst "${drive}:" $Directory
+    if ($LASTEXITCODE -ne 0) { throw 'Nao foi possivel criar o alias temporario.' }
+    $aliases.Add("${drive}:")
+    return "${drive}:\"
+}
+
+function Invoke-IsolatedIntegration {
+    $previousPath = $env:Path
+    try {
+        $env:Path = "$(Split-Path -Parent $flutterPath);$previousPath"
+        & node tool/run_management_live_check.mjs
+        if ($LASTEXITCODE -ne 0) { throw 'Falha na integracao isolada.' }
+    } finally {
+        $env:Path = $previousPath
+    }
+}
+
+$projectPushed = $false
+$dependenciesReady = $false
+try {
+    $projectPath = Get-AsciiPath $PSScriptRoot
+    $flutterPath = Join-Path (Get-AsciiPath $sdkRoot) 'bin\flutter.bat'
+    Push-Location -LiteralPath $projectPath
+    $projectPushed = $true
+    $pubOptions = @('--enforce-lockfile')
+    if ($Offline) { $pubOptions += '--offline' }
+    & $flutterPath pub get @pubOptions
+    if ($LASTEXITCODE -ne 0) { throw 'Falha ao obter dependencias.' }
+    $dependenciesReady = $true
+    if ($Action -eq 'integration') {
+        Invoke-IsolatedIntegration
+        return
+    }
+    if ($Action -eq 'check') {
+        & $flutterPath analyze --no-pub
+        if ($LASTEXITCODE -ne 0) { throw 'Falha na analise.' }
+        & $flutterPath test --no-pub
+        if ($LASTEXITCODE -ne 0) { throw 'Falha nos testes.' }
         if ($Api) {
-            & $flutterAlias build web --dart-define=API_BASE_URL=http://127.0.0.1:3000/api/v1
-        } else {
-            & $flutterAlias build web
+            & npm.cmd test --prefix backend
+            if ($LASTEXITCODE -ne 0) { throw 'Falha nos testes da API.' }
+            Invoke-IsolatedIntegration
         }
+    }
+    if ($Action -eq 'package') {
+        $packagePath = "build/entrega-local-$(Get-Date -Format 'yyyyMMdd-HHmmss-fff')"
+        & $flutterPath build web --no-pub "--output=$packagePath/web" @searchDefines
+        if ($LASTEXITCODE -ne 0) { throw 'Falha na compilacao do pacote.' }
+        New-Item -ItemType Directory -Path "$packagePath/backend" | Out-Null
+        Copy-Item -LiteralPath @('backend/src', 'backend/package.json', 'backend/package-lock.json') -Destination "$packagePath/backend" -Recurse
+        Copy-Item -LiteralPath 'ENTREGA_LOCAL.md' -Destination $packagePath
+        Write-Output "Pacote local em $packagePath"
+    } elseif ($Action -in @('check','build')) {
+        & $flutterPath build web --no-pub @searchDefines
         if ($LASTEXITCODE -ne 0) { throw 'Falha na compilacao web.' }
     } else {
-        if ($Api) {
-            & $flutterAlias run -d edge --dart-define=API_BASE_URL=http://127.0.0.1:3000/api/v1
-        } else {
-            & $flutterAlias run -d edge
-        }
+        & $flutterPath run --no-pub -d edge @searchDefines
     }
 } finally {
-    Pop-Location
-    # Restaura caminhos permanentes para o editor ao encerrar o alias.
-    Push-Location -LiteralPath $PSScriptRoot
-    try { & $sdkPath pub get --offline } finally { Pop-Location }
-    & subst "${driveName}:" /d
+    if ($projectPushed) { Pop-Location }
+    try {
+        if ($aliases.Count -gt 0 -and $dependenciesReady) {
+            # Restaura caminhos permanentes antes de remover os aliases.
+            Push-Location -LiteralPath $PSScriptRoot
+            try { & $sdkPath pub get --offline --enforce-lockfile } finally { Pop-Location }
+        }
+    } finally {
+        foreach ($aliasDrive in $aliases) { & subst $aliasDrive /d }
+    }
 }
 
 

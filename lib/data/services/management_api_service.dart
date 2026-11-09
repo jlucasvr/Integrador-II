@@ -11,12 +11,17 @@ class ManagementApiService {
       : baseUrl = Uri.parse(url.endsWith('/') ? url : '$url/'),
         _client = client ?? http.Client();
   Future<dynamic> request(String method, String path,
-      {Map<String, dynamic>? body, String? token}) async {
+      {Map<String, dynamic>? body,
+      String? token,
+      String? idempotencyKey}) async {
     try {
       final request = http.Request(method, baseUrl.resolve(path));
       request.headers['Content-Type'] = 'application/json';
       if (token != null) {
         request.headers['Authorization'] = 'Bearer $token';
+      }
+      if (idempotencyKey != null) {
+        request.headers['Idempotency-Key'] = idempotencyKey;
       }
       if (body != null) request.body = jsonEncode(body);
       final response = await (() async {
@@ -33,10 +38,13 @@ class ManagementApiService {
       if (response.statusCode >= 400) {
         final message = response.statusCode == 429
             ? 'Muitas tentativas de acesso. Aguarde e tente novamente.'
-            : payload is Map && payload['error'] is Map
+            : payload is Map &&
+                    payload['error'] is Map &&
+                    payload['error']['message'] is String
                 ? payload['error']['message'] as String
                 : 'Não foi possível concluir a operação (${response.statusCode}).';
-        throw ManagementFailure(response.statusCode, message);
+        throw ManagementFailure(response.statusCode, message,
+            uncertain: idempotencyKey != null && response.statusCode >= 500);
       }
       if (payload is! Map || !payload.containsKey('data')) {
         throw const ManagementFailure(

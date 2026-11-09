@@ -12,6 +12,9 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../fixtures/location_service_fixture.dart';
 
 class RecordingPointRepository extends MockPointRepository {
+  @override
+  bool get isDemo => false;
+
   final List<SearchQuery> queries = [];
 
   @override
@@ -27,6 +30,27 @@ Future<void> submit(WidgetTester tester) async {
 }
 
 void main() {
+  testWidgets('busca sem GPS funciona em 320 px com texto ampliado',
+      (tester) async {
+    tester.view.physicalSize = const Size(320, 568);
+    tester.view.devicePixelRatio = 1;
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.view.reset);
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    final repository = RecordingPointRepository();
+    final location = FakeLocationService();
+    await tester.pumpWidget(
+        ApoioApp(repository: repository, locationService: location));
+    final action = find.text('Buscar sem localização');
+    expect(action.hitTestable(), findsOneWidget);
+    await tester.tap(action);
+    await tester.pumpAndSettle();
+    expect(repository.queries.single.coordinates, isNull);
+    expect(location.calls, 0);
+    expect(find.textContaining('Distância indisponível'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('busca fixa preserva termo e coordenadas em novas consultas',
       (tester) async {
     tester.view.physicalSize = const Size(390, 844);
@@ -60,7 +84,7 @@ void main() {
     expect(find.text('Usar minha localização'), findsNothing);
     await submit(tester);
     expect(location.calls, 1);
-    expect(repository.queries.single.coordinates.latitude, -23.55);
+    expect(repository.queries.single.coordinates!.latitude, -23.55);
     expect(find.text('-23.550000, -46.630000'), findsOneWidget);
     expect(find.textContaining('Latitude:'), findsNothing);
     expect(find.textContaining('Longitude:'), findsNothing);
@@ -90,13 +114,48 @@ void main() {
     await tester.enterText(field, 'Cobertor');
     await submit(tester);
     expect(repository.queries.last.term, 'Cobertor');
-    expect(repository.queries.last.coordinates.longitude, -46.63);
+    expect(repository.queries.last.coordinates!.longitude, -46.63);
     expect(location.calls, 1);
     expect(find.text('Ponto Comunitário Norte'), findsOneWidget);
     expect(tester.widget<TextFormField>(field).controller!.text, 'Cobertor');
     await tester.tap(find.byTooltip('Voltar'));
     await tester.pumpAndSettle();
     expect(tester.widget<TextFormField>(field).controller!.text, 'Cobertor');
+  });
+
+  testWidgets('recusa de GPS permite buscar e recuperar filtro de distância',
+      (tester) async {
+    final repository = RecordingPointRepository();
+    final location = FakeLocationService()
+      ..failure = const LocationFailure('Permissão de localização recusada.');
+    await tester.pumpWidget(
+        ApoioApp(repository: repository, locationService: location));
+    final field = find.byKey(const ValueKey('search-term'));
+    await tester.enterText(field, 'Água');
+    await submit(tester);
+    await tester.tap(find.text('Buscar sem localização'));
+    await tester.pumpAndSettle();
+    expect(repository.queries.single.term, 'Água');
+    expect(repository.queries.single.coordinates, isNull);
+    expect(find.textContaining('Distância indisponível'), findsOneWidget);
+    await tester.tap(find.text('Filtros'));
+    await tester.pumpAndSettle();
+    expect(find.text('Distância máxima'), findsNothing);
+    await tester.tap(find.text('Filtros'));
+    await tester.pumpAndSettle();
+
+    location.failure = null;
+    await tester.tap(find.byKey(const ValueKey('location-control')));
+    await tester.pumpAndSettle();
+    expect(repository.queries.last.coordinates!.latitude, -23.55);
+    await tester.tap(find.text('Filtros'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Todas as distâncias'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Até 2 km').last);
+    await tester.pumpAndSettle();
+    expect(repository.queries.last.radiusKm, 2);
+    expect(repository.queries.last.term, 'Água');
   });
 
   testWidgets('permissão negada mantém o termo e permite tentar novamente',
@@ -166,7 +225,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Escola de Apoio Sul'), findsNothing);
     expect(find.text('2 resultados para'), findsOneWidget);
-    expect(repository.queries, hasLength(2));
+    expect(repository.queries, hasLength(3));
+    expect(repository.queries.last.availableOnly, isTrue);
     expect(find.text('-23.550000, -46.630000'), findsOneWidget);
   });
 }

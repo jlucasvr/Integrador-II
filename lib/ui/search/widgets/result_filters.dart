@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 class ResultFilters extends StatelessWidget {
   final SearchIntent intent;
+  final bool showRadius;
   final double? radius;
   final bool availableOnly;
   final ValueChanged<double?> onRadiusChanged;
@@ -12,6 +13,7 @@ class ResultFilters extends StatelessWidget {
   const ResultFilters({
     super.key,
     required this.intent,
+    required this.showRadius,
     required this.radius,
     required this.availableOnly,
     required this.onRadiusChanged,
@@ -22,17 +24,20 @@ class ResultFilters extends StatelessWidget {
   Widget build(BuildContext context) =>
       Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         const SizedBox(height: 16),
-        const FieldHeading('Distância máxima'),
-        DropdownButtonFormField<double>(
-            isExpanded: true,
-            initialValue: radius,
-            decoration: const InputDecoration(),
-            items: const [
-              DropdownMenuItem(value: null, child: Text('Todas as distâncias')),
-              DropdownMenuItem(value: 2, child: Text('Até 2 km')),
-              DropdownMenuItem(value: 5, child: Text('Até 5 km')),
-            ],
-            onChanged: onRadiusChanged),
+        if (showRadius) ...[
+          const FieldHeading('Distância máxima'),
+          DropdownButtonFormField<double>(
+              isExpanded: true,
+              initialValue: radius,
+              decoration: const InputDecoration(),
+              items: const [
+                DropdownMenuItem(
+                    value: null, child: Text('Todas as distâncias')),
+                DropdownMenuItem(value: 2, child: Text('Até 2 km')),
+                DropdownMenuItem(value: 5, child: Text('Até 5 km')),
+              ],
+              onChanged: onRadiusChanged),
+        ],
         if (intent == SearchIntent.help)
           CheckboxListTile(
               contentPadding: EdgeInsets.zero,

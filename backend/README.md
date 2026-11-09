@@ -7,7 +7,7 @@ Node.js 24+, Express 5 e SQLite. Banco persistente local em `data/apoio.sqlite`,
 No PowerShell, dentro da pasta `backend`:
 
 ```powershell
-npm.cmd install
+npm.cmd ci
 npm.cmd run seed
 npm.cmd start
 ```
@@ -38,11 +38,17 @@ Busca: `q` obrigatório; `intent=help` ou `donate`; `location` opcional filtra t
 
 Resposta: `{ "data": [ { "point": {...}, "resource": {...}, "alternative": false } ], "meta": {...} }`.
 
-Sem coordenadas, `distanceKm=null`. O Flutter captura a localização do dispositivo
-e envia `lat` e `lon`, sem filtro textual de endereço. Não há geocodificação de
-endereço, e nomes/endereço/coordenadas do seed são ilustrativos.
+Sem coordenadas, `distanceKm=null`. O Flutter oferece a opção de buscar sem
+localização se a captura falhar. Quando o visitante compartilha sua posição,
+o cliente envia `lat` e `lon` e inclui `radiusKm` se houver um raio selecionado.
+Os nomes, endereços e coordenadas do seed são ilustrativos.
 
-Ordem: correspondências de item/categoria antes de alternativas; em cada grupo, disponível primeiro, depois distância (quando calculada) e nome. Alternativas só aparecem se não houver resultado direto que satisfaça os filtros. Vocabulário inicial explícito: água mineral → Água, comida → Alimentos, sabonete → Higiene, agasalho → Abrigo. Não há busca semântica.
+Cada ponto retorna um recurso representativo. Na busca por ajuda, o servidor
+prefere um item disponível entre as correspondências elegíveis do ponto. Aplica
+os filtros antes de escolher os recursos e só procura alternativas quando
+nenhuma correspondência direta satisfaz os filtros. Ordena por disponibilidade,
+distância quando calculada e nome. Vocabulário de alternativas: água mineral →
+Água, comida → Alimentos, sabonete → Higiene, agasalho → Abrigo.
 
 ## Autenticação e rotas privadas
 
@@ -55,12 +61,25 @@ Use `Authorization: Bearer TOKEN` nas demais rotas. Token aleatório, hash armaz
 | GET | `/auth/me` | Usuário autenticado |
 | POST | `/auth/logout` | Invalida sessão |
 | GET | `/manage/points` | Pontos do gestor |
+| GET | `/manage/my-institutions` | Instituições vinculadas ao gestor |
+| POST | `/manage/points` | Cadastrar ponto na instituição vinculada |
+| PATCH | `/manage/points/:id` | Editar ponto com controle de versão |
 | GET | `/manage/points/:id/stock` | Saldo real e versão do estoque do gestor |
+| GET | `/manage/points/:id/catalog` | Itens do catálogo ainda disponíveis para vínculo ao ponto |
+| POST | `/manage/points/:id/stock` | Vincular item do catálogo ao ponto |
 | POST | `/manage/stocks/:id/movements` | Entrada, saída ou ajuste |
 | GET | `/manage/stocks/:id/movements` | Últimas 100 movimentações |
 | PATCH | `/manage/stocks/:id/publication` | Configuração pública do item |
 | GET / POST | `/manage/institutions` | Prefeitura: listar/cadastrar instituição pendente |
 | PATCH | `/manage/institutions/:id/verification` | Prefeitura da instituição: verificar/suspender |
+
+O vínculo recebe `{ "item_id": "water" }` e retorna `201` com o ID do novo
+registro de estoque. O servidor usa a unidade do catálogo e inicia o registro
+com saldo e versão zero, visibilidade, quantidade pública, distribuição e
+aceitação de doação desativadas. A operação retorna `403` se o gestor não
+administrar o ponto, `404 CATALOG_ITEM_NOT_FOUND` se o item não existir e
+`409 ITEM_ALREADY_LINKED` se o item já estiver vinculado. O conflito preserva
+o saldo e as configurações existentes.
 
 Movimentação:
 
@@ -78,7 +97,29 @@ Erros: `{ "error": { "code": "STALE_STOCK", "message": "..." } }`; 400 dados inv
 
 Prefeitura → instituições → pontos → estoque por item. Vínculos autorizam gestores por instituição. Um item tem categoria e unidade; cada ponto tem quantidade, publicação, distribuição e aceitação independentes. Movimentações guardam antes/depois/responsável. Instituição pendente ou suspensa não aparece publicamente.
 
-SQLite foi escolhido para iniciar sem servidor de banco adicional. Tem esquema relacional, restrições e transações. PostgreSQL poderá ser avaliado para implantação com múltiplas instâncias; não há migração automática para ele nesta entrega. Esquema inicial está em `src/database.js`; futuras alterações precisam de migrações versionadas, preservando os dados.
+SQLite foi escolhido para iniciar sem servidor de banco adicional. PostgreSQL é
+o banco escolhido para implantação; a migração física ainda está pendente.
+O esquema está em `src/database.js`. A evolução para versão 2 adiciona `contact`
+e `version` aos pontos existentes. A versão 3 adiciona `point_creations`, que
+registra a chave e o resultado de cada tentativa de cadastro por gestor.
+As duas evoluções preservam os pontos e os estoques existentes.
+
+Cadastro de ponto exige `institution_id`, `name`, `address`, `region`, `hours`,
+`contact` (texto, pode ser vazio), `latitude`, `longitude` (números) e `active`
+(booleano). Edição recebe os mesmos campos de dados e `expectedVersion` da
+listagem; não permite transferir o ponto de instituição. Versão desatualizada
+retorna 409. Desativar o ponto oculta seus dados públicos sem apagar o estoque.
+Novos pontos começam sem estoque. O gestor pode escolher os primeiros itens
+pelo catálogo existente.
+
+O `POST /manage/points` aceita o cabeçalho opcional `Idempotency-Key` de até
+128 caracteres (`A–Z`, `a–z`, `0–9`, `_` ou `-`). Envie a mesma chave e os
+mesmos dados ao repetir uma tentativa cuja resposta se perdeu. A API devolve
+o mesmo `201` com o ID original. Usar a mesma chave com dados diferentes
+devolve `409 IDEMPOTENCY_CONFLICT`. A chave tem escopo por gestor e o vínculo
+com a instituição é conferido a cada requisição. O Flutter preserva a chave
+enquanto o formulário estiver aberto. Se sair após uma resposta incerta,
+confira a lista antes de iniciar outro cadastro.
 
 Configuração via variáveis `PORT`, `DB_PATH`, `CORS_ORIGINS` (origens separadas por vírgula). Por padrão, o desenvolvimento aceita apenas origens HTTP de localhost/127.0.0.1 com porta. Cadastro automático de administrador não existe.
 
@@ -86,8 +127,8 @@ Configuração via variáveis `PORT`, `DB_PATH`, `CORS_ORIGINS` (origens separad
 
 - Telas Flutter de login, seleção de ponto, estoque, movimentação e histórico já implementadas. Veja GUIA_GESTAO.md na raiz.
 - Convites com expiração e aceitação para vincular gestores; recuperação e confirmação de e-mail.
-- CRUD de pontos, catálogo e equipe; contatos reais da instituição.
-- Geocodificação de endereço; a interface atual usa apenas coordenadas e não exibe mapa.
+- Administração do catálogo e da equipe, além de validação dos contatos reais.
+- Geocodificação de endereço e direções externas.
 - Paginação de busca/histórico, trilha de auditoria ampliada e migrações evolutivas.
 - Para publicação: configuração de ambiente, HTTPS, backup/recuperação, contas reais e revisão dos critérios de verificação. Não expor esta demonstração diretamente como serviço público.
 

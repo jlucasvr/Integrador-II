@@ -7,7 +7,7 @@ import 'package:http/http.dart' as http;
 
 class ApiPointRepository implements PointRepository {
   @override
-  bool get locationFilteringEnabled => true;
+  bool get isDemo => false;
   final PointApiService _service;
   final SearchHitMapper _mapper = SearchHitMapper();
 

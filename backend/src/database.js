@@ -25,6 +25,9 @@ export function openDatabase(path = resolve('data/apoio.sqlite')) {
       name TEXT NOT NULL, address TEXT NOT NULL, region TEXT NOT NULL, hours TEXT NOT NULL,
       latitude REAL NOT NULL CHECK(latitude BETWEEN -90 AND 90),
       longitude REAL NOT NULL CHECK(longitude BETWEEN -180 AND 180), active INTEGER NOT NULL DEFAULT 1);
+    CREATE TABLE IF NOT EXISTS point_creations (
+      user_id TEXT NOT NULL REFERENCES users(id), request_key TEXT NOT NULL, request_hash TEXT NOT NULL,
+      point_id TEXT NOT NULL REFERENCES points(id), PRIMARY KEY(user_id,request_key));
     CREATE TABLE IF NOT EXISTS items (
       id TEXT PRIMARY KEY, name TEXT NOT NULL, category TEXT NOT NULL, unit TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS stocks (
@@ -43,8 +46,11 @@ export function openDatabase(path = resolve('data/apoio.sqlite')) {
     CREATE TABLE IF NOT EXISTS verification_events (
       id TEXT PRIMARY KEY, institution_id TEXT NOT NULL REFERENCES institutions(id),
       user_id TEXT NOT NULL REFERENCES users(id), status TEXT NOT NULL, note TEXT NOT NULL, created_at TEXT NOT NULL);
-    PRAGMA user_version = 1;
   `);
+  const columns = db.prepare('PRAGMA table_info(points)').all();
+  if (!columns.some(c => c.name === 'contact')) db.exec("ALTER TABLE points ADD COLUMN contact TEXT NOT NULL DEFAULT ''");
+  if (!columns.some(c => c.name === 'version')) db.exec('ALTER TABLE points ADD COLUMN version INTEGER NOT NULL DEFAULT 0');
+  if (db.prepare('PRAGMA user_version').get().user_version < 3) db.exec('PRAGMA user_version = 3');
   return db;
 }
 
@@ -74,7 +80,7 @@ export function seedDemo(db, password) {
     const addresses = ['Rua Exemplo, 100 · Centro','Avenida Modelo, 250 · Bairro Norte','Rua Ilustrativa, 40 · Bairro Sul'];
     ['central','norte','sul'].forEach((id,i)=>{
       db.prepare('INSERT INTO institutions VALUES (?,?,?,?)').run(`inst-${id}`,institutions[i],'demo-city','verified');
-      db.prepare('INSERT INTO points VALUES (?,?,?,?,?,?,?,?,?)').run(id,`inst-${id}`,names[i],addresses[i],
+      db.prepare('INSERT INTO points(id,institution_id,name,address,region,hours,latitude,longitude,active) VALUES (?,?,?,?,?,?,?,?,?)').run(id,`inst-${id}`,names[i],addresses[i],
         'Cidade Exemplo',`Segunda a sexta, das 8h às ${i===1?'17':'18'}h`,-23.55+i*.01,-46.63+i*.01,1);
     });
     // Gestor vinculado somente à instituição Central; os demais pontos permitem testar isolamento.

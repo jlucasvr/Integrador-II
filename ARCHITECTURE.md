@@ -51,23 +51,25 @@ test/
 
 `main.dart` abre `AppBootstrap`. O bootstrap cria as dependências uma vez,
 injeta os repositórios no aplicativo e fecha os clientes HTTP ao ser descartado.
-`API_BASE_URL` seleciona a API remota ou os dados demonstrativos da consulta pública.
-Temporariamente, `MOCK_SEARCH` tem padrão `true` no modo debug e prioriza os dados
-locais. Nesse modo, `locationFilteringEnabled=false` desativa a restrição por
-distância nos resultados, preservando os filtros de item, intenção e disponibilidade.
-`--dart-define=MOCK_SEARCH=false` restaura a seleção pela URL da API.
+`API_BASE_URL` seleciona a API por padrão quando está configurada.
+`MOCK_SEARCH=true` seleciona a demonstração de forma explícita. O repositório
+informa se os dados são demonstrativos, e a interface identifica esse modo e
+oculta os controles de localização e distância.
 
-A busca usa exclusivamente coordenadas. `LocationService` captura a posição pelo
+A busca aceita coordenadas opcionais. `LocationService` captura a posição pelo
 `geolocator`, e `LocationViewModel` controla carregamento, falhas e nova tentativa.
 O serviço é injetável para testar o fluxo sem acessar a localização real.
-`SearchQuery` transporta latitude e longitude, enviadas como `lat` e `lon` à API.
+`SearchQuery` transporta coordenadas, raio e disponibilidade. O serviço envia os
+filtros aplicáveis junto à consulta. Sem coordenadas, a consulta omite `lat`,
+`lon` e `radiusKm`. A seleção do recurso e das alternativas ocorre no repositório
+demonstrativo ou na API, antes de entregar resultados à interface.
 `SearchDock` mantém as coordenadas e o formulário fixos na base da home e dos
 resultados, inclusive com rolagem ou teclado aberto. Novos termos são consultados
 na mesma tela de resultados, preservando coordenadas e filtros.
 
 As views compõem widgets, mantêm os controladores de formulário e cuidam da
 navegação. Os view models expõem estado e ações através de `ChangeNotifier`.
-Filtros e ordenação de resultados, validação de movimentações e tratamento do
+Estado dos filtros, validação de movimentações e tratamento do
 estado assíncrono ficam fora dos métodos `build`.
 
 Os repositórios entregam modelos para a interface. `PointRepository` é o contrato

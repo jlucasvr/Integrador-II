@@ -4,6 +4,7 @@ import 'package:apoio_app/ui/core/view_models/async_list_view_model.dart';
 import 'package:apoio_app/ui/core/widgets/loading_indicator.dart';
 import 'package:apoio_app/ui/management/widgets/load_failure.dart';
 import 'package:flutter/material.dart';
+import 'package:apoio_app/ui/management/views/point_form.dart';
 
 class PointsView extends StatefulWidget {
   final ManagementRepository api;
@@ -22,6 +23,14 @@ class _PointsViewState extends State<PointsView> {
   }
 
   void _refresh() => setState(() {});
+  Future<void> _edit([ManagedPoint? point]) async {
+    await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(
+            builder: (_) => PointForm(api: widget.api, point: point)));
+    if (mounted) _viewModel.reload();
+  }
+
   @override
   void dispose() {
     _viewModel.dispose();
@@ -46,6 +55,12 @@ class _PointsViewState extends State<PointsView> {
           const Text('Escolha o ponto cujo estoque você quer administrar.'),
           Align(
               alignment: Alignment.centerLeft,
+              child: FilledButton.icon(
+                  onPressed: () => _edit(),
+                  icon: const Icon(Icons.add),
+                  label: const Text('Cadastrar ponto'))),
+          Align(
+              alignment: Alignment.centerLeft,
               child: TextButton.icon(
                   onPressed: _viewModel.reload,
                   icon: const Icon(Icons.refresh),
@@ -59,9 +74,13 @@ class _PointsViewState extends State<PointsView> {
                 ListTile(
                     contentPadding: EdgeInsets.zero,
                     title: Text(p.name),
-                    subtitle: Text('${p.institution}\n${p.address}'),
+                    subtitle: Text(
+                        '${p.institution}\n${p.address}${p.active ? '' : ' · Inativo'}'),
                     isThreeLine: true,
-                    trailing: const Icon(Icons.chevron_right),
+                    trailing: IconButton(
+                        tooltip: 'Editar ponto',
+                        icon: const Icon(Icons.edit_outlined),
+                        onPressed: () => _edit(p)),
                     onTap: () => widget.onSelect(p)),
                 const Divider()
               ])),

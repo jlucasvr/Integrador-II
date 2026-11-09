@@ -6,7 +6,8 @@ const softwareRendering =
   new URLSearchParams(window.location.search).get('rendering') === 'software';
 
 _flutter.loader.load({
-  config: softwareRendering
-    ? { renderer: 'canvaskit', canvasKitForceCpuOnly: true }
-    : {},
+  config: {
+    canvasKitBaseUrl: new URL('canvaskit/', document.baseURI).href,
+    ...(softwareRendering ? { renderer: 'canvaskit', canvasKitForceCpuOnly: true } : {}),
+  },
 });

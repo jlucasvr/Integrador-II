@@ -11,6 +11,8 @@ class SearchHitMapper {
           name: p['name'] as String,
           institution: p['institution'] as String,
           address: p['address'] as String,
+          contact: p['contact'] as String? ?? '',
+          region: p['region'] as String? ?? '',
           hours: p['hours'] as String,
           updatedAt: _date(p['updatedAt'] as String),
           distanceKm: (p['distanceKm'] as num?)?.toDouble(),

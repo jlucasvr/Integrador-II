@@ -9,7 +9,8 @@ class SearchDock extends StatelessWidget {
   final TextEditingController controller;
   final LocationViewModel location;
   final VoidCallback onSearch;
-  final VoidCallback onLocate;
+  final VoidCallback? onLocate;
+  final VoidCallback? onSearchWithoutLocation;
   final Widget? controls;
 
   const SearchDock({
@@ -19,6 +20,7 @@ class SearchDock extends StatelessWidget {
     required this.location,
     required this.onSearch,
     required this.onLocate,
+    this.onSearchWithoutLocation,
     this.controls,
   });
 
@@ -26,27 +28,31 @@ class SearchDock extends StatelessWidget {
   Widget build(BuildContext context) {
     final coordinates = location.coordinates;
     final colors = Theme.of(context).colorScheme;
-    final locationPill = LocationPill(
-        captured: coordinates != null, busy: location.busy, onLocate: onLocate);
+    final locate = onLocate;
+    final searchWithoutLocation = onSearchWithoutLocation;
+    final opaque =
+        location.error != null || MediaQuery.sizeOf(context).width < 360;
 
     return Padding(
         padding:
             EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
         child: DecoratedBox(
-            decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                  Color(0x00ffffff),
-                  Color(0xf2ffffff),
-                  Colors.white
-                ],
-                    stops: [
-                  0,
-                  0.45,
-                  1
-                ])),
+            decoration: opaque
+                ? BoxDecoration(color: colors.surface)
+                : const BoxDecoration(
+                    gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                        Color(0x00ffffff),
+                        Color(0xf2ffffff),
+                        Colors.white
+                      ],
+                        stops: [
+                        0,
+                        0.45,
+                        1
+                      ])),
             child: SafeArea(
                 top: false,
                 child: Align(
@@ -63,36 +69,42 @@ class SearchDock extends StatelessWidget {
                                     controls!,
                                     const SizedBox(height: 12),
                                   ],
-                                  SizedBox(
-                                      height: 48,
-                                      child: Stack(
-                                          clipBehavior: Clip.none,
-                                          children: [
-                                            if (coordinates != null)
+                                  if (locate != null)
+                                    SizedBox(
+                                        height: 48,
+                                        child: Stack(
+                                            clipBehavior: Clip.none,
+                                            children: [
+                                              if (coordinates != null)
+                                                Positioned(
+                                                    left: 60,
+                                                    right: 0,
+                                                    bottom: 0,
+                                                    child: Text(
+                                                        '${coordinates.latitude.toStringAsFixed(6)}, ${coordinates.longitude.toStringAsFixed(6)}',
+                                                        key: const ValueKey(
+                                                            'search-coordinates'),
+                                                        textAlign:
+                                                            TextAlign.right,
+                                                        style: Theme.of(context)
+                                                            .textTheme
+                                                            .bodySmall)),
                                               Positioned(
-                                                  left: 60,
+                                                  key: const ValueKey(
+                                                      'location-anchor'),
+                                                  left: 0,
                                                   right: 0,
                                                   bottom: 0,
-                                                  child: Text(
-                                                      '${coordinates.latitude.toStringAsFixed(6)}, ${coordinates.longitude.toStringAsFixed(6)}',
-                                                      key: const ValueKey(
-                                                          'search-coordinates'),
-                                                      textAlign:
-                                                          TextAlign.right,
-                                                      style: Theme.of(context)
-                                                          .textTheme
-                                                          .bodySmall)),
-                                            Positioned(
-                                                key: const ValueKey(
-                                                    'location-anchor'),
-                                                left: 0,
-                                                right: 0,
-                                                bottom: 0,
-                                                child: Align(
-                                                    alignment:
-                                                        Alignment.centerLeft,
-                                                    child: locationPill)),
-                                          ])),
+                                                  child: Align(
+                                                      alignment:
+                                                          Alignment.centerLeft,
+                                                      child: LocationPill(
+                                                          captured:
+                                                              coordinates !=
+                                                                  null,
+                                                          busy: location.busy,
+                                                          onLocate: locate))),
+                                            ])),
                                   const SizedBox(height: 4),
                                   if (location.error != null)
                                     Padding(
@@ -104,6 +116,18 @@ class SearchDock extends StatelessWidget {
                                                 style: Theme.of(context)
                                                     .textTheme
                                                     .bodySmall))),
+                                  if (searchWithoutLocation != null)
+                                    Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: TextButton(
+                                            onPressed: location.busy
+                                                ? null
+                                                : searchWithoutLocation,
+                                            style: TextButton.styleFrom(
+                                                backgroundColor:
+                                                    colors.surface),
+                                            child: const Text(
+                                                'Buscar sem localização'))),
                                   Form(
                                       key: formKey,
                                       child: TextFormField(

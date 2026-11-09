@@ -5,10 +5,12 @@ import 'package:flutter/material.dart';
 class StockItemCard extends StatelessWidget {
   final StockItem item;
   final VoidCallback onMove, onHistory;
+  final VoidCallback? onPublication;
   const StockItemCard(
       {super.key,
       required this.item,
       required this.onMove,
+      this.onPublication,
       required this.onHistory});
   @override
   Widget build(BuildContext context) {
@@ -31,6 +33,8 @@ class StockItemCard extends StatelessWidget {
           Text(s.acceptsDonation ? 'Aceita doação' : 'Não aceita doação'),
           const SizedBox(height: 12),
           Wrap(spacing: 12, runSpacing: 8, children: [
+            OutlinedButton(
+                onPressed: onPublication, child: const Text('Publicação')),
             FilledButton(
                 onPressed: () => onMove(), child: const Text('Movimentar')),
             OutlinedButton(

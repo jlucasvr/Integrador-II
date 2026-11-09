@@ -45,10 +45,50 @@ test('alternativas e lista vazia não inventam correspondências',async()=>{
   assert.deepEqual((await request('/points?q=medicamento')).body.data,[]);
   assert.equal((await request('/points?q=agua&location=Centro%2C%20Cidade%20Exemplo')).body.meta.total,1);
 });
+test('seleção por ponto respeita disponibilidade, raio e intenção antes das alternativas', async (t) => {
+  const item = db.prepare('INSERT INTO items(id,name,category,unit) VALUES (?,?,?,?)');
+  const stock = db.prepare('INSERT INTO stocks(id,point_id,item_id,quantity,updated_at) VALUES (?,?,?,0,?)');
+  t.after(() => db.exec(`
+    DELETE FROM stocks WHERE id IN ('test-filtered', 'test-mineral');
+    DELETE FROM items WHERE id IN ('test-filtered', 'test-mineral');
+  `));
+  item.run('test-filtered', 'Água filtrada', 'Água', 'litros');
+  item.run('test-mineral', 'Água mineral', 'Água', 'garrafas');
+  const timestamp = new Date().toISOString();
+  stock.run('test-filtered', 'central', 'test-filtered', timestamp);
+  stock.run('test-mineral', 'norte', 'test-mineral', timestamp);
+
+  for (const filter of ['', '&availableOnly=true']) {
+    const { body } = await request(`/points?q=agua${filter}`);
+    assert.equal(body.data.find(hit => hit.point.id === 'central').resource.id, 'central-water');
+  }
+  const direct = await request('/points?q=agua%20mineral');
+  assert.deepEqual(direct.body.data.map(hit => [hit.point.id, hit.alternative]), [['norte', false]]);
+  const near = await request('/points?q=agua%20mineral&lat=-23.55&lon=-46.63&radiusKm=0.5&availableOnly=true');
+  assert.deepEqual(near.body.data.map(hit => [hit.point.id, hit.resource.id, hit.alternative]),
+    [['central', 'central-water', true]]);
+  const donation = await request('/points?q=agua%20mineral&intent=donate&availableOnly=true');
+  assert.equal(donation.body.data[0].resource.id, 'test-mineral');
+  assert.equal(donation.body.data[0].resource.available, false);
+});
 test('validação rejeita coordenadas e filtros inválidos',async()=>{
-  for(const query of ['lat=999&lon=0','lat=0','radiusKm=2','intent=admin','availableOnly=1']) {
+  for(const query of ['lat=999&lon=0','lat=0','lat=%20&lon=%20','lat=0&lat=0&lon=0','radiusKm=2','intent=admin','availableOnly=1']) {
     assert.equal((await request(`/points?q=agua&${query}`)).status,400);
   }
+  assert.equal((await request('/points?q=%CC%81')).status,400);
+});
+test('preflight local permite a chave de reenvio de cadastro', async () => {
+  const response = await fetch(`${base}/manage/points`, {
+    method: 'OPTIONS',
+    headers: {
+      Origin: 'http://localhost:8080',
+      'Access-Control-Request-Method': 'POST',
+      'Access-Control-Request-Headers': 'authorization,content-type,idempotency-key',
+    },
+  });
+  assert.equal(response.status, 204);
+  assert.equal(response.headers.get('access-control-allow-origin'), 'http://localhost:8080');
+  assert.match(response.headers.get('access-control-allow-headers'), /\bIdempotency-Key\b/i);
 });
 test('rotas privadas exigem sessão e vínculo com a instituição',async()=>{
   assert.equal((await request('/manage/points/central/stock')).status,401);

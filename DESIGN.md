@@ -3,7 +3,7 @@
 Referencia: wireframe monocromatico aprovado pelo usuario em 14/10/2026.
 
 - Modo de uso: consulta publica e gestao de estoque.
-- Cores: branco, cinza claro #EEEEEE, texto/botoes/selecao #292929. Bordas claras padronizadas em #D0D0D0 solido, 1 pixel; elementos preenchidos em preto mantem borda #292929 da mesma cor do preenchimento. Campo em foco usa contorno #292929 de 2 pixels.
+- Cores: branco, cinza claro #EEEEEE, texto/botões/seleção #292929. Bordas decorativas usam #D0D0D0. Campos e caixas de seleção usam #767676 para definir o controle. Campo em foco usa contorno #292929 de 2 pixels, e botões têm indicação de foco por teclado.
 - Poppins local, peso 500 para textos, rotulos e acoes; peso 700 reservado aos destaques. Corpo 14, auxiliares 12, titulos de tela 20; chamada inicial 48 com peso 800 e descricao 18.
 - Selecao de ajuda/doacao e categorias agrupadas junto a busca fixa na base da home, com intervalo de 8 pixels entre os controles.
 - Campos e botoes em formato de pilula; altura minima dos botoes 44.
@@ -19,4 +19,4 @@ Referencia: wireframe monocromatico aprovado pelo usuario em 14/10/2026.
 - Nenhum horario aberto/agora ou selo de verificacao e inventado pelo tema; o conteudo permanece vinculado aos dados existentes.
 - Tema compartilhado com login e gestao, definido em lib/ui/core/theme/wireframe_theme.dart.
 
-O aviso de dados ficticios foi removido das telas. Referencia visual orienta hierarquia e componentes, enquanto a navegacao segue o comportamento Flutter existente.
+O modo demonstrativo identifica os dados fictícios na tela inicial, nos resultados e nos detalhes. A busca conectada oferece uma ação para continuar sem localização após uma falha de captura.

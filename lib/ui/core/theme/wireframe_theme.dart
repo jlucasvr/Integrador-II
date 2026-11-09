@@ -4,6 +4,7 @@ import 'interaction_colors.dart';
 ThemeData wireframeTheme() {
   const ink = Color(0xff292929);
   const outline = Color(0xffd0d0d0);
+  const controlOutline = Color(0xff767676);
   const shape = StadiumBorder();
   final theme = ThemeData(
     useMaterial3: true,
@@ -46,10 +47,10 @@ ThemeData wireframeTheme() {
       contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       border: OutlineInputBorder(
           borderRadius: BorderRadius.all(Radius.circular(32)),
-          borderSide: BorderSide(color: outline)),
+          borderSide: BorderSide(color: controlOutline)),
       enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.all(Radius.circular(32)),
-          borderSide: BorderSide(color: outline)),
+          borderSide: BorderSide(color: controlOutline)),
       focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.all(Radius.circular(32)),
           borderSide: BorderSide(color: ink, width: 2)),
@@ -94,7 +95,8 @@ ThemeData wireframeTheme() {
     dividerTheme: const DividerThemeData(color: outline, thickness: 1),
     checkboxTheme: CheckboxThemeData(
         side: WidgetStateBorderSide.resolveWith((states) => BorderSide(
-            color: states.contains(WidgetState.selected) ? ink : outline))),
+            color:
+                states.contains(WidgetState.selected) ? ink : controlOutline))),
     textSelectionTheme: const TextSelectionThemeData(
         cursorColor: ink,
         selectionColor: Color(0xffeeeeee),

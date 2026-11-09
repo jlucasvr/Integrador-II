@@ -66,15 +66,16 @@ class HitTile extends StatelessWidget {
                                   Text(hit.point.institution,
                                       style: theme.textTheme.bodySmall),
                                 ])),
-                            const SizedBox(width: 8),
-                            ConstrainedBox(
-                                constraints:
-                                    const BoxConstraints(maxWidth: 110),
-                                child: ResultBadge(
-                                    label: hit.point.distanceKm == null
-                                        ? 'Distância não calculada'
-                                        : '${hit.point.distanceKm!.toStringAsFixed(1).replaceAll('.', ',')} km',
-                                    icon: Icons.near_me_outlined)),
+                            if (hit.point.distanceKm case final distance?) ...[
+                              const SizedBox(width: 8),
+                              ConstrainedBox(
+                                  constraints:
+                                      const BoxConstraints(maxWidth: 110),
+                                  child: ResultBadge(
+                                      label:
+                                          '${distance.toStringAsFixed(1).replaceAll('.', ',')} km',
+                                      icon: Icons.near_me_outlined)),
+                            ],
                           ]),
                       const SizedBox(height: 16),
                       Column(

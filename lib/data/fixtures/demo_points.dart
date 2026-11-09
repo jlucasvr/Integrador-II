@@ -9,7 +9,7 @@ const demoPoints = [
       address: 'Rua Exemplo, 100 · Centro',
       hours: 'Segunda a sexta, das 8h às 18h',
       updatedAt: '14/10/2026, às 10h',
-      distanceKm: 1.2,
+      distanceKm: null,
       resources: [
         Resource('Água potável', 'Água', 'garrafas de 1 L', true, true, 120),
         Resource('Cesta básica', 'Alimentos', 'cestas', true, true, 25),
@@ -25,7 +25,7 @@ const demoPoints = [
       address: 'Avenida Modelo, 250 · Bairro Norte',
       hours: 'Segunda a sexta, das 8h às 17h',
       updatedAt: '14/10/2026, às 9h',
-      distanceKm: 2.8,
+      distanceKm: null,
       resources: [
         Resource('Água potável', 'Água', 'garrafas de 1 L', true, true, null),
         Resource('Cobertor', 'Cobertores', 'unidades', true, true, 40),
@@ -40,7 +40,7 @@ const demoPoints = [
       address: 'Rua Ilustrativa, 40 · Bairro Sul',
       hours: 'Segunda a sexta, das 8h às 18h',
       updatedAt: '13/10/2026, às 16h',
-      distanceKm: 4.1,
+      distanceKm: null,
       resources: [
         Resource('Água potável', 'Água', 'garrafas de 1 L', false, true, 0),
         Resource('Cesta básica', 'Alimentos', 'cestas', true, false, 10),
