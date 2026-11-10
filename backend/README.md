@@ -1,20 +1,14 @@
 # API da plataforma de apoio
 
-Node.js 24+, Express 5 e SQLite. Banco persistente local em `data/apoio.sqlite`, criado na inicialização. Primeira versão para desenvolvimento da dupla; servidor escuta somente em `127.0.0.1`.
+Node.js 24+, Express 5 e PostgreSQL 18 no ambiente principal. O SQLite permanece
+na prévia acadêmica descartável, nas fixtures de teste e como origem de importação.
 
 ## Executar
 
-No PowerShell, dentro da pasta `backend`:
-
-```powershell
-npm.cmd ci
-npm.cmd run seed
-npm.cmd start
-```
-
-Neste computador, o banco demonstrativo já foi criado; use apenas `npm.cmd start`. Em uma instalação nova, execute `seed` somente uma vez num banco vazio. Cria instituições, pontos, catálogo, estoques e dois usuários fictícios. Não apaga nem substitui banco existente. As senhas aleatórias ficam em `data/demo-access.txt`, ignorado pelo Git. Não compartilhe esse arquivo ou publique as contas demonstrativas.
-
-Saúde: `http://127.0.0.1:3000/api/v1/health`. Testes: `npm.cmd test` (banco isolado em memória; não altera dados locais).
+Use o Compose descrito no [README principal](../README.md) ou configure o
+PostgreSQL e rode `npm ci`, `npm run migrate` e `npm start` em `backend`.
+O [guia de operação](../docs/operacao-postgresql.md) detalha configuração,
+seed, importação, diagnóstico, testes e recuperação.
 
 ## Conectar Flutter
 
@@ -30,7 +24,8 @@ Sem `-Api`, o front-end continua utilizando os dados fictícios embutidos. O ban
 
 | Método | Caminho após `/api/v1` | Função |
 |---|---|---|
-| GET | `/health` | Saúde do servidor |
+| GET | `/health` | Processo está respondendo, mesmo sem conexão ao banco |
+| GET | `/ready` | Acesso ao PostgreSQL e presença da migração inicial; 503 se indisponível |
 | GET | `/points?q=agua&intent=help&location=Cidade%20Exemplo` | Busca pública |
 | GET | `/points/:id` | Detalhes públicos |
 
@@ -52,7 +47,7 @@ distância quando calculada e nome. Vocabulário de alternativas: água mineral 
 
 ## Autenticação e rotas privadas
 
-`POST /auth/login`: `{ "email": "gestor@example.test", "password": "senha do arquivo local" }`. Resposta contém `data.token` e `data.expiresAt`.
+`POST /auth/login`: `{ "email": "gestor@example.test", "password": "senha informada no seed local" }`. Resposta contém `data.token` e `data.expiresAt`.
 
 Use `Authorization: Bearer TOKEN` nas demais rotas. Token aleatório, hash armazenado no banco, validade de 8 horas. Senhas usam scrypt com salt. Login limitado a 20 tentativas por IP em 15 minutos.
 
@@ -97,12 +92,10 @@ Erros: `{ "error": { "code": "STALE_STOCK", "message": "..." } }`; 400 dados inv
 
 Prefeitura → instituições → pontos → estoque por item. Vínculos autorizam gestores por instituição. Um item tem categoria e unidade; cada ponto tem quantidade, publicação, distribuição e aceitação independentes. Movimentações guardam antes/depois/responsável. Instituição pendente ou suspensa não aparece publicamente.
 
-SQLite foi escolhido para iniciar sem servidor de banco adicional. PostgreSQL é
-o banco escolhido para implantação; a migração física ainda está pendente.
-O esquema está em `src/database.js`. A evolução para versão 2 adiciona `contact`
-e `version` aos pontos existentes. A versão 3 adiciona `point_creations`, que
-registra a chave e o resultado de cada tentativa de cadastro por gestor.
-As duas evoluções preservam os pontos e os estoques existentes.
+O esquema principal está em `migrations/001_initial.sql`. A API conserva os
+indicadores 0/1 nas rotas privadas e datas ISO 8601 nas respostas. A versão
+SQLite 1 pode não ter `contact`; nas versões 1 e 2, `version` e
+`point_creations` podem estar ausentes. O importador trata essas diferenças.
 
 Cadastro de ponto exige `institution_id`, `name`, `address`, `region`, `hours`,
 `contact` (texto, pode ser vazio), `latitude`, `longitude` (números) e `active`
@@ -121,7 +114,9 @@ com a instituição é conferido a cada requisição. O Flutter preserva a chave
 enquanto o formulário estiver aberto. Se sair após uma resposta incerta,
 confira a lista antes de iniciar outro cadastro.
 
-Configuração via variáveis `PORT`, `DB_PATH`, `CORS_ORIGINS` (origens separadas por vírgula). Por padrão, o desenvolvimento aceita apenas origens HTTP de localhost/127.0.0.1 com porta. Cadastro automático de administrador não existe.
+Cada resposta inclui `X-Request-Id`. A busca usa `meta.demo=true` na prévia
+acadêmica descartável; na API principal o campo permanece presente e vale
+`false`, mesmo que o banco local tenha recebido um seed de teste.
 
 ## Próximas etapas
 

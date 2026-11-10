@@ -5,6 +5,7 @@ import 'package:apoio_app/data/models/account_session.dart';
 import 'package:apoio_app/data/models/catalog_item.dart';
 import 'package:apoio_app/data/models/managed_point.dart';
 import 'package:apoio_app/data/models/movement_type.dart';
+import 'package:apoio_app/data/models/municipal_institution.dart';
 import 'package:apoio_app/data/models/stock_item.dart';
 import 'package:apoio_app/data/models/stock_movement.dart';
 import 'package:apoio_app/data/services/management_api_service.dart';
@@ -19,25 +20,33 @@ class ManagementRepository extends ChangeNotifier {
   String? signInNotice;
   AccountSession? get session => _session;
   ManagementRepository(String url, {http.Client? client})
-      : baseUrl = Uri.parse(url.endsWith('/') ? url : '$url/'),
-        _service = ManagementApiService(url, client: client);
+    : baseUrl = Uri.parse(url.endsWith('/') ? url : '$url/'),
+      _service = ManagementApiService(url, client: client);
 
-  Future<dynamic> _request(String method, String path,
-      {Map<String, dynamic>? body,
-      bool authorized = true,
-      String? idempotencyKey}) async {
+  Future<dynamic> _request(
+    String method,
+    String path, {
+    Map<String, dynamic>? body,
+    bool authorized = true,
+    String? idempotencyKey,
+  }) async {
     final current = _session;
     if (authorized &&
         (current == null || !current.expiresAt.isAfter(DateTime.now()))) {
       _expire(current);
       throw const ManagementFailure(
-          401, 'Sua sessão expirou. Entre novamente.');
+        401,
+        'Sua sessão expirou. Entre novamente.',
+      );
     }
     try {
-      return await _service.request(method, path,
-          body: body,
-          token: authorized ? current!.token : null,
-          idempotencyKey: idempotencyKey);
+      return await _service.request(
+        method,
+        path,
+        body: body,
+        token: authorized ? current!.token : null,
+        idempotencyKey: idempotencyKey,
+      );
     } on ManagementFailure catch (error) {
       if (error.status == 401 && authorized) _expire(current);
       rethrow;
@@ -54,8 +63,12 @@ class ManagementRepository extends ChangeNotifier {
   }
 
   Future<void> login(String email, String password) async {
-    final result = await _request('POST', 'auth/login',
-        authorized: false, body: {'email': email.trim(), 'password': password});
+    final result = await _request(
+      'POST',
+      'auth/login',
+      authorized: false,
+      body: {'email': email.trim(), 'password': password},
+    );
     _session = AccountSession(result as Map<String, dynamic>);
     signInNotice = null;
     notifyListeners();
@@ -79,65 +92,113 @@ class ManagementRepository extends ChangeNotifier {
       (await _request('GET', 'manage/my-institutions') as List)
           .cast<Map<String, dynamic>>();
 
-  Future<void> savePoint(Map<String, dynamic> body,
-      {ManagedPoint? point, String? idempotencyKey}) async {
+  Future<List<MunicipalInstitution>> municipalInstitutions() async =>
+      (await _request('GET', 'manage/institutions') as List)
+          .map((data) => MunicipalInstitution(data as Map<String, dynamic>))
+          .toList();
+
+  Future<void> createInstitution(String name) async {
+    await _request('POST', 'manage/institutions', body: {'name': name.trim()});
+  }
+
+  Future<void> verifyInstitution(
+    String id,
+    InstitutionStatus status,
+    String note,
+  ) async {
+    await _request(
+      'PATCH',
+      'manage/institutions/${Uri.encodeComponent(id)}/verification',
+      body: {'status': status.name, 'note': note.trim()},
+    );
+  }
+
+  Future<void> savePoint(
+    Map<String, dynamic> body, {
+    ManagedPoint? point,
+    String? idempotencyKey,
+  }) async {
     final result = await _request(
-        point == null ? 'POST' : 'PATCH',
-        point == null
-            ? 'manage/points'
-            : 'manage/points/${Uri.encodeComponent(point.id)}',
-        body: {...body, if (point != null) 'expectedVersion': point.version},
-        idempotencyKey: point == null ? idempotencyKey : null);
+      point == null ? 'POST' : 'PATCH',
+      point == null
+          ? 'manage/points'
+          : 'manage/points/${Uri.encodeComponent(point.id)}',
+      body: {...body, if (point != null) 'expectedVersion': point.version},
+      idempotencyKey: point == null ? idempotencyKey : null,
+    );
     if (point == null &&
         idempotencyKey != null &&
         (result is! Map ||
             result['id'] is! String ||
             (result['id'] as String).isEmpty)) {
-      throw const ManagementFailure(502, 'O servidor não confirmou o cadastro.',
-          uncertain: true);
+      throw const ManagementFailure(
+        502,
+        'O servidor não confirmou o cadastro.',
+        uncertain: true,
+      );
     }
   }
 
   Future<void> publish(StockItem item, Map<String, dynamic> options) async {
     await _request(
-        'PATCH', 'manage/stocks/${Uri.encodeComponent(item.id)}/publication',
-        body: {...options, 'expectedVersion': item.version});
+      'PATCH',
+      'manage/stocks/${Uri.encodeComponent(item.id)}/publication',
+      body: {...options, 'expectedVersion': item.version},
+    );
   }
 
-  Future<List<StockItem>> stock(String pointId) async => (await _request(
-          'GET', 'manage/points/${Uri.encodeComponent(pointId)}/stock') as List)
-      .map((s) => StockItem(s as Map<String, dynamic>))
-      .toList();
+  Future<List<StockItem>> stock(String pointId) async =>
+      (await _request(
+                'GET',
+                'manage/points/${Uri.encodeComponent(pointId)}/stock',
+              )
+              as List)
+          .map((s) => StockItem(s as Map<String, dynamic>))
+          .toList();
 
-  Future<List<CatalogItem>> catalog(String pointId) async => (await _request(
-              'GET', 'manage/points/${Uri.encodeComponent(pointId)}/catalog')
-          as List)
-      .map((item) => CatalogItem(item as Map<String, dynamic>))
-      .toList();
+  Future<List<CatalogItem>> catalog(String pointId) async =>
+      (await _request(
+                'GET',
+                'manage/points/${Uri.encodeComponent(pointId)}/catalog',
+              )
+              as List)
+          .map((item) => CatalogItem(item as Map<String, dynamic>))
+          .toList();
 
   Future<void> linkStockItem(String pointId, String itemId) async {
     await _request(
-        'POST', 'manage/points/${Uri.encodeComponent(pointId)}/stock',
-        body: {'item_id': itemId});
+      'POST',
+      'manage/points/${Uri.encodeComponent(pointId)}/stock',
+      body: {'item_id': itemId},
+    );
   }
 
   Future<void> move(
-      StockItem item, MovementType type, int quantity, String note) async {
+    StockItem item,
+    MovementType type,
+    int quantity,
+    String note,
+  ) async {
     await _request(
-        'POST', 'manage/stocks/${Uri.encodeComponent(item.id)}/movements',
-        body: {
-          'type': type.name,
-          'quantity': quantity,
-          'expectedVersion': item.version,
-          if (note.trim().isNotEmpty) 'note': note.trim(),
-        });
+      'POST',
+      'manage/stocks/${Uri.encodeComponent(item.id)}/movements',
+      body: {
+        'type': type.name,
+        'quantity': quantity,
+        'expectedVersion': item.version,
+        if (note.trim().isNotEmpty) 'note': note.trim(),
+      },
+    );
   }
 
-  Future<List<StockMovement>> history(String stockId) async => (await _request(
-              'GET', 'manage/stocks/${Uri.encodeComponent(stockId)}/movements')
-          as List)
-      .map((m) => StockMovement(m as Map<String, dynamic>))
-      .toList();
+  Future<List<StockMovement>> history(String stockId) async =>
+      (await _request(
+                'GET',
+                'manage/stocks/${Uri.encodeComponent(stockId)}/movements',
+              )
+              as List)
+          .map((m) => StockMovement(m as Map<String, dynamic>))
+          .toList();
   @override
   void dispose() {
     _closed = true;

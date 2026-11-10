@@ -1,6 +1,7 @@
 # Plataforma de apoio — Projeto Integrador 2
 
-Front-end em Flutter e API local em Node.js/Express com SQLite.
+Front-end em Flutter e API em Node.js/Express com PostgreSQL. O SQLite continua
+na prévia acadêmica descartável e nos testes locais sem Docker.
 
 `iniciar.ps1 -Api` conecta a busca e a gestão à API local. Sem `-Api`, a busca
 abre em **Demonstração · dados fictícios**, com dados embutidos e sem GPS ou
@@ -22,24 +23,31 @@ Para uma instalação de desenvolvimento, use **Node.js 24 ou superior**,
 esse Dart. Coloque `flutter\bin` no `PATH` ou passe `-FlutterSdk` com a pasta
 do SDK. O script usa o SDK em `Downloads\flutter` como alternativa.
 
-Terminal 1:
+Na raiz do projeto, com Docker e Compose v2 em execução:
 
 ```powershell
-cd 'C:\Users\João\Documents\Projetos\Projeto Integrador 2\backend'
-npm.cmd ci
-npm.cmd start
+if (-not (Test-Path .env)) { Copy-Item .env.example .env }
+# Abra .env e preencha POSTGRES_PASSWORD com uma senha local exclusiva.
+docker compose up --build --wait
+Invoke-RestMethod http://127.0.0.1:3000/api/v1/ready
 ```
 
-Terminal 2:
+Para experimentar os fluxos de gestão em um banco novo e vazio:
 
 ```powershell
-cd 'C:\Users\João\Documents\Projetos\Projeto Integrador 2'
+$env:DEMO_PASSWORD = [guid]::NewGuid().ToString('N')
+docker compose exec -e DEMO_PASSWORD api npm run seed
+# Use o valor desta variável para entrar com gestor@example.test.
+$env:DEMO_PASSWORD
 .\iniciar.ps1 -Api
 ```
 
-Reinicie o processo da API depois de atualizar o backend. O banco demonstrativo
-existente pode ser reutilizado. Execute `seed` somente em uma instalação nova com
-banco vazio.
+O Compose aplica as migrações antes de iniciar a API. Use `docker compose up
+--build --wait` após alterar o backend. O volume mantém os dados em
+`docker compose down` e na próxima subida. Para diagnóstico, use
+`docker compose ps -a` e `docker compose logs --tail 100 api migrate db`.
+Veja [o guia de operação](docs/operacao-postgresql.md) para usar uma porta
+diferente, importar uma cópia do SQLite ou restaurar um backup.
 
 Em caminhos com caracteres fora de ASCII, o script cria um alias temporário
 para a compilação. A opção `-Offline` usa o cache local de pacotes Dart e
@@ -59,11 +67,16 @@ aplicativo continua usando a renderizacao padrao.
 
 ## Gestao
 
-Clique em Gestao na tela inicial. Conta gestora: gestor@example.test. A senha local esta em backend/data/demo-access.txt. Selecione Centro de Apoio Central, consulte o estoque, registre uma movimentacao e abra o historico. Refaca uma busca publica para conferir a atualizacao.
+Clique em Gestão na tela inicial e entre com a conta fictícia criada pelo seed.
+Selecione Centro de Apoio Central, consulte o estoque, registre uma movimentação
+e abra o histórico. Refaça uma busca pública para conferir a atualização.
 
-Sessao mantida em memoria durante a navegacao; recarregar exige novo login. Sair limpa a sessao local e tenta invalidar o token no servidor. Sessao expirada retorna ao login. Painel da prefeitura e convites ficam para as proximas etapas.
+A sessão fica em memória durante a navegação. Recarregar exige novo login.
+Sair limpa a sessão local e tenta invalidar o token no servidor. Contas da
+Prefeitura abrem o painel de instituições do seu município.
 
-Guia detalhado: GUIA_GESTAO.md. Contrato da API e decisoes: backend/README.md.
+Veja o [guia de Gestão](GUIA_GESTAO.md), o [contrato da API](backend/README.md)
+e o [relatório do redesign](docs/redesign-gestao-prefeitura.md).
 
 ## Funcionalidades
 
@@ -79,14 +92,15 @@ Na busca conectada, o navegador pode fornecer latitude e longitude. Use
 **Buscar sem localização** para consultar sem pedir acesso ao GPS.
 O termo e a intenção são preservados. Você pode habilitar a distância depois,
 usando o controle de localização nos resultados. A API calcula a distância em
-linha reta. Os dados do seed SQLite também são ilustrativos, embora o modo API
+linha reta. Os dados do seed são ilustrativos, embora o modo API
 permita consultar e editar os registros persistidos.
 Gestores podem cadastrar e editar pontos (incluindo contato, coordenadas e
 ativação) e configurar a publicação de cada item pelo botão Publicação no estoque.
 Para iniciar o estoque de um ponto novo, use **Vincular item do catálogo**.
 O item começa com saldo zero e fica oculto da consulta até a publicação explícita.
-Convites, recuperação de senha e painel da prefeitura seguem pendentes.
-PostgreSQL foi escolhido para implantação; esta versão ainda executa com SQLite.
+A Prefeitura pode consultar e cadastrar instituições e alterar a situação
+da verificação com justificativa. Convites e recuperação de senha seguem
+pendentes.
 Escopo e roteiro das sprints: [SPRINTS.md](SPRINTS.md).
 
 ## Validacao
@@ -96,7 +110,10 @@ Escopo e roteiro das sprints: [SPRINTS.md](SPRINTS.md).
 ```
 
 O comando executa análise Dart, testes Flutter, testes Node, integração com
-SQLite em memória e compilação web em modo API.
+SQLite em memória e compilação web em modo API. Instale as dependências Node
+locais com `npm.cmd ci --prefix backend` antes da validação. Com
+`TEST_DATABASE_URL` configurada, a integração usa schemas isolados no PostgreSQL.
+Veja [os comandos de teste PostgreSQL](docs/operacao-postgresql.md#testes).
 
 Para empacotar a versão conectada, indique a URL de destino explicitamente com
 `-ApiBaseUrl` ou com a variável `API_BASE_URL`. `-Action build -Api` rejeita a
@@ -106,14 +123,13 @@ ausência da URL. `-Action build` sem `-Api` gera a demonstração.
 .\iniciar.ps1 -Action build -Api -ApiBaseUrl http://127.0.0.1:3000/api/v1
 ```
 
-Para verificar a integração Dart → API → SQLite, instale as dependências do
-backend e execute na raiz:
+Para verificar somente a integração Dart → API, execute na raiz:
 
 ```powershell
 .\iniciar.ps1 -Action integration
 ```
 
-O comando inicia uma API em porta local temporária com SQLite em memória,
+O comando inicia uma API em porta local temporária com banco de teste isolado,
 executa o teste de gestão e encerra a API. Verifica o percurso do cadastro de um
 ponto ao primeiro item publicado, incluindo reenvio, histórico e desativação.
 

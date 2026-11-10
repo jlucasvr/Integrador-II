@@ -83,6 +83,7 @@ class _SearchPageState extends State<SearchPage> {
         extendBodyBehindAppBar: false,
         resizeToAvoidBottomInset: false,
         appBar: AppTopBar(
+            showLogo: true,
             onManagement: () => openManagement(context, widget.managementApi)),
         bottomNavigationBar: SearchDock(
             formKey: _form,

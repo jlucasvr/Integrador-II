@@ -49,7 +49,7 @@ class _LoginViewState extends State<LoginView> {
                         style: Theme.of(context).textTheme.headlineSmall),
                     const SizedBox(height: 8),
                     const Text(
-                        'Use a conta vinculada à sua instituição para administrar o estoque.'),
+                        'Entre com sua conta de Gestor ou Prefeitura. O painel é selecionado de acordo com o seu perfil.'),
                     if (widget.api.signInNotice != null)
                       Padding(
                           padding: const EdgeInsets.symmetric(vertical: 16),

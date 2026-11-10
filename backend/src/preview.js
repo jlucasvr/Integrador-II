@@ -1,3 +1,4 @@
+import { adaptSqlite } from './sqlite-adapter.js';
 import { existsSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
 import { join } from 'node:path';
@@ -16,7 +17,7 @@ const password = randomBytes(12).toString('base64url');
 seedDemo(db, password);
 const app = express();
 app.use(express.static(webRoot));
-app.use(createApp(db));
+app.use(createApp(adaptSqlite(db), { demo: true }));
 
 const server = app.listen(0, '127.0.0.1', () => {
   console.log(`Avaliação local: http://127.0.0.1:${server.address().port}`);

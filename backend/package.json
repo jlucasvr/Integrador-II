@@ -1,6 +1,25 @@
 {
-  "name": "apoio-api", "version": "0.1.0", "private": true,
-  "type": "module", "engines": { "node": ">=24.0.0" },
-  "scripts": { "start": "node src/server.js", "dev": "node --watch src/server.js", "seed": "node src/seed.js", "test": "node --test", "preview": "node src/preview.js" },
-  "dependencies": { "express": "^5.1.0", "helmet": "^8.1.0", "express-rate-limit": "^8.0.0" }
+  "name": "apoio-api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "seed": "node src/seed.js",
+    "test": "node --test test/*.test.js",
+    "preview": "node src/preview.js",
+    "migrate": "node src/migrate.js",
+    "import:sqlite": "node src/import-sqlite.js",
+    "test:postgres": "node integration/run-postgres.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.0.0",
+    "helmet": "^8.1.0",
+    "pg": "^8.23.1"
+  }
 }

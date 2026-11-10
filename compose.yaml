@@ -1,0 +1,52 @@
+name: apoio
+
+x-backend: &backend
+  build: ./backend
+  environment:
+    PGHOST: db
+    PGDATABASE: ${POSTGRES_DB:-apoio}
+    PGUSER: ${POSTGRES_USER:-apoio}
+    PGPASSWORD: ${POSTGRES_PASSWORD:?Configure POSTGRES_PASSWORD no .env}
+    HOST: 0.0.0.0
+    CORS_ORIGINS: ${CORS_ORIGINS:-}
+
+services:
+  db:
+    image: postgres:18
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-apoio}
+      POSTGRES_USER: ${POSTGRES_USER:-apoio}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Configure POSTGRES_PASSWORD no .env}
+    ports:
+      - "127.0.0.1:${APOIO_PG_PORT:-5433}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\" -h 127.0.0.1"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+  migrate:
+    <<: *backend
+    command: ["npm", "run", "migrate"]
+    depends_on:
+      db:
+        condition: service_healthy
+  api:
+    <<: *backend
+    init: true
+    ports:
+      - "127.0.0.1:${APOIO_API_PORT:-3000}:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/v1/ready').then(r=>{if(!r.ok)process.exitCode=1},()=>{process.exitCode=1})"]
+      interval: 5s
+      timeout: 4s
+      retries: 10
+
+volumes:
+  postgres-data:

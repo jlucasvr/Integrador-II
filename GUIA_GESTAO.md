@@ -4,11 +4,11 @@ Projeto: `C:\Users\João\Documents\Projetos\Projeto Integrador 2`.
 
 ## Executar
 
-Inicie ou reinicie a API no terminal do back-end:
+Na raiz, configure `.env` e prepare os dados fictícios conforme o
+[README](README.md). Inicie a API e o banco:
 
 ```powershell
-cd 'C:\Users\João\Documents\Projetos\Projeto Integrador 2\backend'
-npm.cmd start
+docker compose up --build --wait
 ```
 
 Em outro terminal:
@@ -18,7 +18,9 @@ cd 'C:\Users\João\Documents\Projetos\Projeto Integrador 2'
 .\iniciar.ps1 -Api
 ```
 
-Na tela pública, clique em **Gestão**. Entre com `gestor@example.test`. A senha está no arquivo local `backend/data/demo-access.txt`. A conta demonstrativa administra os pontos da instituição do Centro de Apoio Central.
+Na tela pública, clique em **Gestão**. Entre com `gestor@example.test` e a senha
+informada no seed. A conta demonstrativa administra os pontos da instituição
+do Centro de Apoio Central.
 
 ## Experimentar o fluxo
 
@@ -36,13 +38,18 @@ As alterações no aplicativo usam o banco local e persistem. Para experimentar 
 
 A sessão é mantida em memória durante a navegação e dura no máximo 8 horas. Recarregar ou fechar o aplicativo exige novo login; não há armazenamento persistente do token no navegador nesta etapa. O botão Sair limpa a sessão local e tenta invalidá-la na API. Resposta 401 retorna à tela de login.
 
-A consulta pública segue sem login. No modo sem API (`iniciar.ps1`), Gestão explica como iniciar o servidor. Contas da prefeitura são reconhecidas, mas o painel da prefeitura ainda não foi implementado.
+A consulta pública segue sem login. No modo sem API (`iniciar.ps1`), Gestão
+explica como iniciar o servidor. Contas da Prefeitura abrem a lista de
+instituições do próprio município. Com o seed, use
+`prefeitura@example.test` e a senha de demonstração.
 
 ## O que está pronto
 
 Login, cadastro e edição de pontos, vínculo de itens do catálogo, configuração de publicação, movimentações com prévia de saldo, histórico e tratamento de sessão e conflitos.
 
-Os dados iniciais são fictícios. Convites, recuperação de senha e painel da prefeitura seguem pendentes.
+Os dados iniciais são fictícios. No painel municipal, filtre as instituições
+pendentes, abra os detalhes e use **Alterar situação** para registrar uma
+decisão com justificativa. Convites e recuperação de senha seguem pendentes.
 
 ## Verificação
 
@@ -50,4 +57,7 @@ Os dados iniciais são fictícios. Convites, recuperação de senha e painel da 
 .\iniciar.ps1 -Action check -Api
 ```
 
-Executa análise, testes e compilação web no modo API. Há testes dos fluxos em larguras de celular e computador. O fluxo real cliente Flutter → API → SQLite foi verificado em um banco isolado.
+Executa análise, testes e compilação web no modo API. Há testes dos fluxos em
+larguras de celular e computador. Configure `TEST_DATABASE_URL` conforme o
+[guia de operação](docs/operacao-postgresql.md#testes) para testar o percurso
+Flutter → API → PostgreSQL em um schema descartável.

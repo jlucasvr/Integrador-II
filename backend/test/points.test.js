@@ -1,3 +1,4 @@
+import { testDatabase } from './support/database.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
@@ -14,13 +15,12 @@ const point = {
 };
 
 async function startPointsApi(t) {
-  const db = openDatabase(':memory:');
-  seedDemo(db, 'test-password');
+  const db = await testDatabase('test-password');
   const server = createApp(db).listen(0, '127.0.0.1');
   t.after(async () => {
     server.closeAllConnections();
     await new Promise(resolve => server.close(resolve));
-    db.close();
+    await db.close();
   });
   await once(server, 'listening');
   const base = `http://127.0.0.1:${server.address().port}/api/v1`;
@@ -72,7 +72,7 @@ test('a mesma tentativa de cadastro devolve o mesmo ponto e isola as chaves por 
   assert.equal(first.status, 201);
   assert.deepEqual(concurrent, first);
   assert.deepEqual(await create(point, { key }), first);
-  assert.equal(db.prepare('SELECT count(*) AS total FROM points WHERE name=?').get(point.name).total, 1);
+  assert.equal(Number((await db.get('SELECT count(*) AS total FROM points WHERE name=?', point.name)).total), 1);
   const changed = await create({ ...point, contact: 'Outro contato' }, { key });
   assert.equal(changed.status, 409);
   assert.equal(changed.body.error.code, 'IDEMPOTENCY_CONFLICT');
@@ -81,29 +81,30 @@ test('a mesma tentativa de cadastro devolve o mesmo ponto e isola as chaves por 
   assert.equal(distinct.status, 201);
   assert.notEqual(distinct.body.data.id, first.body.data.id);
 
-  db.prepare('INSERT INTO users VALUES (?,?,?,?,?,?)').run(
-    'other-manager', 'Outro gestor', 'other@example.test', hashPassword('test-password'), 'manager', null);
+  await db.run('INSERT INTO users VALUES (?,?,?,?,?,?)', 'other-manager', 'Outro gestor', 'other@example.test', hashPassword('test-password'), 'manager', null);
   const token = await login('other@example.test');
   assert.equal((await create(point, { key, token })).status, 403);
-  db.prepare('INSERT INTO memberships VALUES (?,?)').run('other-manager', 'inst-central');
+  await db.run('INSERT INTO memberships VALUES (?,?)', 'other-manager', 'inst-central');
   const other = await create(point, { key, token });
   assert.equal(other.status, 201);
   assert.notEqual(other.body.data.id, first.body.data.id);
-  db.prepare('DELETE FROM memberships WHERE user_id=?').run('demo-manager');
+  await db.run('DELETE FROM memberships WHERE user_id=?', 'demo-manager');
   assert.equal((await create(point, { key })).status, 403);
 });
 
 test('falha ao guardar a tentativa reverte o ponto e permite reenviar', async (t) => {
   const { db, request } = await startPointsApi(t);
-  db.exec(`CREATE TRIGGER fail_creation BEFORE INSERT ON point_creations
+  if (db.kind === 'postgres') {
+    await db.exec('ALTER TABLE point_creations ADD CONSTRAINT injected_failure CHECK (false)');
+  } else await db.exec(`CREATE TRIGGER fail_creation BEFORE INSERT ON point_creations
     BEGIN SELECT RAISE(ABORT, 'falha injetada no teste'); END`);
   const create = () => request('/manage/points', 'POST', point, { key: 'retry-after-rollback' });
   assert.equal((await create()).status, 500);
-  assert.equal(db.prepare('SELECT count(*) AS total FROM points WHERE name=?').get(point.name).total, 0);
-  assert.equal(db.prepare('SELECT count(*) AS total FROM point_creations').get().total, 0);
-  db.exec('DROP TRIGGER fail_creation');
+  assert.equal(Number((await db.get('SELECT count(*) AS total FROM points WHERE name=?', point.name)).total), 0);
+  assert.equal(Number((await db.get('SELECT count(*) AS total FROM point_creations')).total), 0);
+  await db.exec(db.kind === 'postgres' ? 'ALTER TABLE point_creations DROP CONSTRAINT injected_failure' : 'DROP TRIGGER fail_creation');
   assert.equal((await create()).status, 201);
-  assert.equal(db.prepare('SELECT count(*) AS total FROM points WHERE name=?').get(point.name).total, 1);
+  assert.equal(Number((await db.get('SELECT count(*) AS total FROM points WHERE name=?', point.name)).total), 1);
 });
 
 test('catálogo e vínculo exigem acesso ao ponto e preservam o estoque em conflito', async (t) => {
@@ -140,8 +141,8 @@ test('catálogo e vínculo exigem acesso ao ponto e preservam o estoque em confl
   });
   assert.equal(moved.status, 201);
   assert.equal((await link()).status, 409);
-  assert.equal(db.prepare('SELECT quantity FROM stocks WHERE id=?').get(id).quantity, 5);
-  assert.equal(db.prepare("SELECT quantity FROM stocks WHERE id='central-water'").get().quantity, 120);
+  assert.equal((await db.get('SELECT quantity FROM stocks WHERE id=?', id)).quantity, 5);
+  assert.equal((await db.get("SELECT quantity FROM stocks WHERE id='central-water'")).quantity, 120);
 });
 
 test('bases SQLite das versões 1 e 2 preservam pontos e estoques na versão 3', () => {

@@ -96,6 +96,15 @@ acessar telas ou modelos. Injete repositórios pelos construtores para permitir
 testes com clientes simulados. Preserve a expiração de sessão, o controle de
 versão do estoque e o bloqueio de reenvio após uma resposta incerta.
 
+## API e persistência
+
+O Flutter fala com a API REST; o banco fica atrás do Express. O servidor
+principal usa um pool PostgreSQL, migrações SQL numeradas e transações de
+uma conexão. A prévia acadêmica usa o mesmo contrato HTTP com SQLite em
+memória. O Compose local executa banco, migrações e API; o Flutter roda no
+SDK do computador. Veja [operação PostgreSQL](docs/operacao-postgresql.md)
+e [relatório de arquitetura e handoff](docs/relatorio-modernizacao.md).
+
 ## Validar
 
 ```powershell

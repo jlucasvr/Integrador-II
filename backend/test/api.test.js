@@ -1,11 +1,10 @@
+import { testDatabase } from './support/database.js';
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
-import { openDatabase,seedDemo } from '../src/database.js';
 import { createApp } from '../src/app.js';
 
-const db=openDatabase(':memory:');
-seedDemo(db,'test-password-not-for-deployment');
+const db = await testDatabase('test-password-not-for-deployment');
 const server=createApp(db).listen(0,'127.0.0.1');
 let base,manager,admin;
 async function request(path,{method='GET',token,body,...rest}={}) {
@@ -19,7 +18,7 @@ before(async()=>{
   manager=(await request('/auth/login',{method:'POST',body:{email:'gestor@example.test',password:'test-password-not-for-deployment'}})).body.data.token;
   admin=(await request('/auth/login',{method:'POST',body:{email:'prefeitura@example.test',password:'test-password-not-for-deployment'}})).body.data.token;
 });
-after(async()=>{server.closeAllConnections();await new Promise(resolve=>server.close(resolve));db.close();});
+after(async()=>{server.closeAllConnections();await new Promise(resolve=>server.close(resolve));await db.close();});
 
 test('consulta pública oculta saldo privado e calcula distância somente com coordenadas',async()=>{
   const result=await request('/points?q=agua');
@@ -46,17 +45,17 @@ test('alternativas e lista vazia não inventam correspondências',async()=>{
   assert.equal((await request('/points?q=agua&location=Centro%2C%20Cidade%20Exemplo')).body.meta.total,1);
 });
 test('seleção por ponto respeita disponibilidade, raio e intenção antes das alternativas', async (t) => {
-  const item = db.prepare('INSERT INTO items(id,name,category,unit) VALUES (?,?,?,?)');
-  const stock = db.prepare('INSERT INTO stocks(id,point_id,item_id,quantity,updated_at) VALUES (?,?,?,0,?)');
+  const item = (...values) => db.run('INSERT INTO items(id,name,category,unit) VALUES (?,?,?,?)', ...values);
+  const stock = (...values) => db.run('INSERT INTO stocks(id,point_id,item_id,quantity,updated_at) VALUES (?,?,?,0,?)', ...values);
   t.after(() => db.exec(`
     DELETE FROM stocks WHERE id IN ('test-filtered', 'test-mineral');
     DELETE FROM items WHERE id IN ('test-filtered', 'test-mineral');
   `));
-  item.run('test-filtered', 'Água filtrada', 'Água', 'litros');
-  item.run('test-mineral', 'Água mineral', 'Água', 'garrafas');
+  await item('test-filtered', 'Água filtrada', 'Água', 'litros');
+  await item('test-mineral', 'Água mineral', 'Água', 'garrafas');
   const timestamp = new Date().toISOString();
-  stock.run('test-filtered', 'central', 'test-filtered', timestamp);
-  stock.run('test-mineral', 'norte', 'test-mineral', timestamp);
+  await stock('test-filtered', 'central', 'test-filtered', timestamp);
+  await stock('test-mineral', 'norte', 'test-mineral', timestamp);
 
   for (const filter of ['', '&availableOnly=true']) {
     const { body } = await request(`/points?q=agua${filter}`);
@@ -102,15 +101,15 @@ test('saída excedente é rejeitada sem alterar saldo ou histórico',async()=>{
   const r=await request('/manage/stocks/central-water/movements',{method:'POST',token:manager,
     body:{type:'exit',quantity:121,expectedVersion:0}});
   assert.equal(r.status,409);assert.equal(r.body.error.code,'INSUFFICIENT_STOCK');
-  assert.equal(db.prepare('SELECT quantity FROM stocks WHERE id=?').get('central-water').quantity,120);
-  assert.equal(db.prepare('SELECT COUNT(*) AS n FROM movements').get().n,0);
+  assert.equal((await db.get('SELECT quantity FROM stocks WHERE id=?', 'central-water')).quantity,120);
+  assert.equal(Number((await db.get('SELECT COUNT(*) AS n FROM movements')).n),0);
 });
 test('saídas concorrentes com o mesmo saldo permitem somente uma confirmação',async()=>{
   const results=await Promise.all([1,2].map(()=>request('/manage/stocks/central-water/movements',{
     method:'POST',token:manager,body:{type:'exit',quantity:80,expectedVersion:0}})));
   assert.deepEqual(results.map(r=>r.status).sort(),[201,409]);
-  assert.equal(db.prepare('SELECT quantity FROM stocks WHERE id=?').get('central-water').quantity,40);
-  assert.equal(db.prepare('SELECT COUNT(*) AS n FROM movements').get().n,1);
+  assert.equal((await db.get('SELECT quantity FROM stocks WHERE id=?', 'central-water')).quantity,40);
+  assert.equal(Number((await db.get('SELECT COUNT(*) AS n FROM movements')).n),1);
 });
 test('ajuste define o saldo real e grava responsável no histórico',async()=>{
   const r=await request('/manage/stocks/central-water/movements',{method:'POST',token:manager,
@@ -126,6 +125,22 @@ test('somente a prefeitura pode verificar e suspensão remove o ponto da consult
   assert.equal((await request('/manage/institutions/inst-sul/verification',{method:'PATCH',token:admin,body})).status,200);
   assert.equal((await request('/points/sul')).status,404);
   assert.ok(!(await request('/points?q=agua')).body.data.some(h=>h.point.id==='sul'));
+});
+test('prefeitura cadastra instituição pendente e não acessa outra prefeitura', async () => {
+  await db.run("INSERT INTO municipalities VALUES ('other-city','Outra cidade')");
+  await db.run("INSERT INTO institutions VALUES ('other-inst','Outra instituição','other-city','pending')");
+  assert.equal((await request('/manage/institutions', { method: 'POST', token: manager, body: { name: 'Sem acesso' } })).status, 403);
+  const created = await request('/manage/institutions', { method: 'POST', token: admin, body: { name: 'Nova instituição' } });
+  assert.equal(created.status, 201);
+  assert.equal(created.body.data.status, 'pending');
+  const institutions = (await request('/manage/institutions', { token: admin })).body.data;
+  assert.ok(institutions.some((i) => i.id === created.body.data.id));
+  assert.ok(!institutions.some((i) => i.id === 'other-inst'));
+  const denied = await request('/manage/institutions/other-inst/verification', {
+    method: 'PATCH', token: admin, body: { status: 'verified', note: 'Fora do município' },
+  });
+  assert.equal(denied.status, 404);
+  assert.equal((await db.get("SELECT status FROM institutions WHERE id='other-inst'")).status, 'pending');
 });
 test('publicação exige versão e nunca entrega quantidade privada',async()=>{
   const body={public_quantity:false,visible:true,distributable:true,accepts_donation:true,expectedVersion:2};

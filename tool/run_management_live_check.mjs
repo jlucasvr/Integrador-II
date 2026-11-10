@@ -1,13 +1,12 @@
+import { testDatabase } from '../backend/test/support/database.js';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { createServer } from 'node:http';
 import { createApp } from '../backend/src/app.js';
-import { openDatabase, seedDemo } from '../backend/src/database.js';
 
-const db = openDatabase(':memory:');
+const db = await testDatabase('integration-test-password');
 const server = createServer(createApp(db));
 try {
-  seedDemo(db, 'integration-test-password');
   server.listen(0, '127.0.0.1');
   await once(server, 'listening');
   const url = `http://127.0.0.1:${server.address().port}/api/v1`;
@@ -25,5 +24,5 @@ try {
       server.closeAllConnections();
     });
   }
-  db.close();
+  await db.close();
 }

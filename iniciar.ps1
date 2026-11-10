@@ -92,7 +92,7 @@ try {
         & $flutterPath build web --no-pub "--output=$packagePath/web" @searchDefines
         if ($LASTEXITCODE -ne 0) { throw 'Falha na compilacao do pacote.' }
         New-Item -ItemType Directory -Path "$packagePath/backend" | Out-Null
-        Copy-Item -LiteralPath @('backend/src', 'backend/package.json', 'backend/package-lock.json') -Destination "$packagePath/backend" -Recurse
+        Copy-Item -LiteralPath @('backend/src', 'backend/migrations', 'backend/package.json', 'backend/package-lock.json') -Destination "$packagePath/backend" -Recurse
         Copy-Item -LiteralPath 'ENTREGA_LOCAL.md' -Destination $packagePath
         Write-Output "Pacote local em $packagePath"
     } elseif ($Action -in @('check','build')) {
