@@ -194,7 +194,7 @@ class _SearchPageState extends State<SearchPage> {
                           .clamp(0, double.infinity),
                 ),
                 child: StepLayout(
-                  centerContent: _step < 3,
+                  centerContent: true,
                   header: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -213,38 +213,42 @@ class _SearchPageState extends State<SearchPage> {
                         ),
                         const SizedBox(height: 24),
                       ],
-                      Text(
-                        title,
-                        style: theme.textTheme.headlineSmall!.copyWith(
-                          fontSize: MediaQuery.sizeOf(context).width < 360
-                              ? 32
-                              : 40,
-                          height: 1.15,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -.8,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(switch (_step) {
-                        0 => 'Encontre apoio ou um lugar para doar.',
-                        1 => 'Escolha uma categoria ou escreva na busca.',
-                        2 =>
-                          'Ative sua localização para encontrar pontos próximos de você.',
-                        _ => 'Ajuste sua busca aqui mesmo.',
-                      }),
-                      const SizedBox(height: 16),
-                      if (widget.repository.isDemo) ...[
-                        const DemoSearchNotice(),
-                        const SizedBox(height: 16),
-                      ],
                     ],
                   ),
-                  content: Padding(
-                    padding: const EdgeInsets.only(bottom: 32),
-                    child: Center(
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 580),
-                        child: _stepContent(context),
+                  content: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 580),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            title,
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.headlineSmall!.copyWith(
+                              fontSize: MediaQuery.sizeOf(context).width < 360
+                                  ? 32
+                                  : 40,
+                              height: 1.15,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -.8,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(switch (_step) {
+                            0 => 'Encontre apoio ou um lugar para doar.',
+                            1 => 'Escolha uma categoria ou escreva na busca.',
+                            2 =>
+                              'Ative sua localização para encontrar pontos próximos de você.',
+                            _ => 'Ajuste sua busca aqui mesmo.',
+                          }, textAlign: TextAlign.center),
+                          const SizedBox(height: 32),
+                          if (widget.repository.isDemo) ...[
+                            const DemoSearchNotice(),
+                            const SizedBox(height: 16),
+                          ],
+                          _stepContent(context),
+                        ],
                       ),
                     ),
                   ),
