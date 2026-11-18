@@ -25,7 +25,7 @@ Referencia: wireframe monocromatico aprovado pelo usuario em 14/10/2026.
 
 O modo demonstrativo identifica os dados fictícios na tela inicial, nos resultados e nos detalhes. A localização é necessária para avançar à busca, inclusive na demonstração; falhas oferecem nova tentativa sem opção de ignorar a captura. A demonstração continua sem inventar distâncias para os dados fictícios.
 
-Os itens correspondentes à busca ficam em um agrupamento interno com borda de raio 20 e divisores entre as linhas. Cada item mantém seu indicador de estoque e sua data de atualização; itens sem relação com a busca não são adicionados ao agrupamento.
+Os itens correspondentes à busca ficam em um agrupamento interno com borda de raio 20 e divisores entre as linhas. Cada item mantém seu indicador de estoque; a última atualização do estoque da organização aparece uma única vez no rodapé do cartão, acima da ação de detalhes; itens sem relação com a busca não são adicionados ao agrupamento.
 
 Na primeira etapa, escolher Preciso de ajuda ou Quero ajudar avança diretamente. Nas etapas de item e localização, a mesma barra principal permanece fixa na base: seta para avançar na categoria e lupa para buscar após a captura. Não há botões extras de Continuar ou Ver resultados nessas etapas. O halo verde WhatsApp (#25D366) surge suavemente e pulsa lentamente, sem giro ou trilhas, e guia a ação: primeiro na seta da barra quando há item; depois na localização; após a captura, na lupa. A seta ilustrativa no conteúdo da etapa de localização não muda após a captura. A barra de progresso das etapas usa 9 pixels, como o estoque. As categorias são pílulas clicáveis com superfície de 32 pixels, iguais às pílulas informativas, mantendo área de toque acessível.
 
@@ -35,3 +35,13 @@ O pulso do halo varia entre 54% e 96% de opacidade, com difusão um pouco mais a
 Nas telas públicas, o conteúdo rola por trás do gradiente do cabeçalho, preservando o espaço inicial para os controles. O intervalo entre localização flutuante e busca é de 16 pixels, igual ao intervalo entre Gestão e Filtros. Os atalhos dos detalhes consideram a altura do cabeçalho ao posicionar as seções.
 
 - Filtros em modal central: distância ajustável de 0 a 50 km, com ambas as extremidades representando todas as distâncias; disponibilidade mantida. Aplicar confirma o conjunto e Cancelar preserva a busca.
+
+Em tablets (a partir de 760 pixels), os resultados usam até duas colunas; em telas largas, até três, conforme a largura disponível, com conteúdo limitado a 1200 pixels. As linhas têm cartões de mesma altura e ações alinhadas, sem alturas fixas que cortem os itens. Texto ampliado reduz o número de colunas. A busca flutuante permanece centralizada e limitada a 800 pixels nas telas maiores.
+
+A organização usa duas áreas a partir de 1024 pixels: itens à esquerda, localização, horário e contato à direita. Os itens podem ocupar duas colunas quando há espaço. Abaixo desse limite, as seções continuam em sequência; no mobile, a organização mantém a disposição anterior. O início, os detalhes e a navegação da gestão compartilham o limite de 1200 pixels no desktop. Formulários podem manter campos de até 700 pixels, alinhados à esquerda desse espaço; os botões do início ficam centralizados com largura própria.
+
+As categorias usam o mesmo intervalo de 12 pixels nos eixos horizontal e vertical. A superfície padrão permanece em 32 pixels; o preenchimento invisível de toque do botão não amplia mais a distância entre as linhas no celular. Com fonte ampliada, a altura da pílula acompanha o texto para preservar os rótulos. A barra de busca continua centralizada, com sua largura independente da área de navegação.
+
+Na listagem, o indicador de disponibilidade ocupa uma área de 48 pixels de altura em todos os estados, com o conteúdo centralizado. A área cresce somente com a ampliação da fonte do aparelho; alternar entre texto e barra não muda a altura da linha.
+
+Disponível e Indisponível usam check e X simples, sem círculo. Nos itens da organização com quantidade oculta, o status fica centralizado e usa verde ou vermelho; apenas o disponível recebe o complemento “· confirme no contato”, em cor neutra. Não há mensagem adicional sobre nível de estoque não informado.

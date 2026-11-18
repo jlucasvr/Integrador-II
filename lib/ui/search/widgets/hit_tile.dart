@@ -12,6 +12,7 @@ class HitTile extends StatelessWidget {
   final SearchIntent intent;
   final List<Resource>? resources;
   final VoidCallback onOpen;
+  final double topSpacing;
 
   const HitTile({
     super.key,
@@ -19,6 +20,7 @@ class HitTile extends StatelessWidget {
     required this.intent,
     required this.onOpen,
     this.resources,
+    this.topSpacing = 16,
   });
 
   @override
@@ -31,7 +33,7 @@ class HitTile extends StatelessWidget {
     final items = resources ?? [hit.resource];
 
     return Padding(
-      padding: const EdgeInsets.only(top: 16),
+      padding: EdgeInsets.only(top: topSpacing),
       child: Card(
         margin: EdgeInsets.zero,
         elevation: 0,
@@ -43,130 +45,143 @@ class HitTile extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: colors.primary,
-                      shape: BoxShape.circle,
-                    ),
-                    child: SizedBox.square(
-                      dimension: 44,
-                      child: Icon(
-                        Icons.apartment_rounded,
-                        size: 22,
-                        color: colors.surface,
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: colors.primary,
+                          shape: BoxShape.circle,
+                        ),
+                        child: SizedBox.square(
+                          dimension: 44,
+                          child: Icon(
+                            Icons.apartment_rounded,
+                            size: 22,
+                            color: colors.surface,
+                          ),
+                        ),
                       ),
-                    ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              hit.point.name,
+                              style: theme.textTheme.titleMedium,
+                            ),
+                            if (hit.point.institution != hit.point.name) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                hit.point.institution,
+                                style: theme.textTheme.bodySmall,
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
+                  if (hasDistance || region.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          hit.point.name,
-                          style: theme.textTheme.titleMedium,
-                        ),
-                        if (hit.point.institution != hit.point.name) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            hit.point.institution,
-                            style: theme.textTheme.bodySmall,
+                        if (hasDistance)
+                          Tooltip(
+                            message: 'Distância em linha reta aproximada',
+                            child: ResultBadge(
+                              label:
+                                  '${distance.toStringAsFixed(distance < .1 ? 2 : 1).replaceAll('.', ',')} km',
+                              icon: Icons.near_me_outlined,
+                            ),
+                          ),
+                        if (hasDistance && region.isNotEmpty)
+                          const SizedBox(width: 8),
+                        if (region.isNotEmpty)
+                          Flexible(
+                            child: Tooltip(
+                              message: region,
+                              child: ResultBadge(
+                                label: region,
+                                icon: Icons.location_on_outlined,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                  const SizedBox(height: 18),
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: colors.outline),
+                    ),
+                    child: Column(
+                      children: [
+                        for (var index = 0; index < items.length; index++) ...[
+                          if (index > 0)
+                            const Divider(height: 1, indent: 16, endIndent: 16),
+                          _ResultResourceRow(
+                            resource: items[index],
+                            intent: intent,
                           ),
                         ],
                       ],
                     ),
                   ),
-                ],
-              ),
-              if (hasDistance || region.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (hasDistance)
-                      Tooltip(
-                        message: 'Distância em linha reta aproximada',
-                        child: ResultBadge(
-                          label:
-                              '${distance.toStringAsFixed(distance < .1 ? 2 : 1).replaceAll('.', ',')} km',
-                          icon: Icons.near_me_outlined,
+                  if (hit.alternative) ...[
+                    const SizedBox(height: 10),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.swap_horiz_rounded,
+                          size: 16,
+                          color: colors.onSurfaceVariant,
                         ),
-                      ),
-                    if (hasDistance && region.isNotEmpty)
-                      const SizedBox(width: 8),
-                    if (region.isNotEmpty)
-                      Flexible(
-                        child: Tooltip(
-                          message: region,
-                          child: ResultBadge(
-                            label: region,
-                            icon: Icons.location_on_outlined,
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            'Alternativa da mesma categoria',
+                            style: theme.textTheme.bodySmall,
                           ),
                         ),
-                      ),
+                      ],
+                    ),
                   ],
-                ),
-              ],
-              const SizedBox(height: 18),
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: colors.outline),
-                ),
-                child: Column(
-                  children: [
-                    for (var index = 0; index < items.length; index++) ...[
-                      if (index > 0)
-                        const Divider(height: 1, indent: 16, endIndent: 16),
-                      _ResultResourceRow(
-                        resource: items[index],
-                        intent: intent,
-                        fallbackDate: hit.point.updatedAt,
-                      ),
-                    ],
-                  ],
-                ),
+                  const SizedBox(height: 14),
+                ],
               ),
-              if (hit.alternative) ...[
-                const SizedBox(height: 10),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      Icons.swap_horiz_rounded,
-                      size: 16,
-                      color: colors.onSurfaceVariant,
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        'Alternativa da mesma categoria',
-                        style: theme.textTheme.bodySmall,
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  StockUpdatedAt(value: hit.point.updatedAt),
+                  const SizedBox(height: 12),
+                  FilledButton(
+                    onPressed: onOpen,
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 2),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Flexible(child: Text('Ver detalhes do ponto')),
+                          SizedBox(width: 12),
+                          Icon(Icons.arrow_forward_rounded, size: 18),
+                        ],
                       ),
                     ),
-                  ],
-                ),
-              ],
-              const SizedBox(height: 14),
-
-              FilledButton(
-                onPressed: onOpen,
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 2),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Flexible(child: Text('Ver detalhes do ponto')),
-                      SizedBox(width: 12),
-                      Icon(Icons.arrow_forward_rounded, size: 18),
-                    ],
                   ),
-                ),
+                ],
               ),
             ],
           ),
@@ -177,14 +192,9 @@ class HitTile extends StatelessWidget {
 }
 
 class _ResultResourceRow extends StatelessWidget {
-  const _ResultResourceRow({
-    required this.resource,
-    required this.intent,
-    required this.fallbackDate,
-  });
+  const _ResultResourceRow({required this.resource, required this.intent});
   final Resource resource;
   final SearchIntent intent;
-  final String fallbackDate;
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -199,6 +209,10 @@ class _ResultResourceRow extends StatelessWidget {
         children: [
           LayoutBuilder(
             builder: (context, constraints) {
+              final stacked =
+                  constraints.maxWidth < 180 ||
+                  MediaQuery.textScalerOf(context).scale(14) > 20;
+              final indicatorWidth = stacked ? 180.0 : 110.0;
               final name = Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -214,13 +228,20 @@ class _ResultResourceRow extends StatelessWidget {
                   ),
                 ],
               );
-              final indicator = ResourceAvailabilityIndicator(
+              final indicator = SizedBox(
                 key: ValueKey('result-stock-${resource.name}'),
-                resource: resource,
-                compact: true,
+                height: ResourceAvailabilityIndicator.compactHeight(
+                  context,
+                  indicatorWidth,
+                ),
+                child: Center(
+                  child: ResourceAvailabilityIndicator(
+                    resource: resource,
+                    compact: true,
+                  ),
+                ),
               );
-              if (constraints.maxWidth < 180 ||
-                  MediaQuery.textScalerOf(context).scale(14) > 20) {
+              if (stacked) {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -264,9 +285,6 @@ class _ResultResourceRow extends StatelessWidget {
               ],
             ),
           ],
-
-          const SizedBox(height: 12),
-          StockUpdatedAt(value: resource.updatedAt ?? fallbackDate),
         ],
       ),
     );

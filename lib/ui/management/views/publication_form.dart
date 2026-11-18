@@ -1,3 +1,5 @@
+import 'package:apoio_app/ui/core/layout/page_body.dart';
+import 'package:apoio_app/ui/core/layout/public_layout.dart';
 import 'package:apoio_app/ui/core/widgets/app_top_bar.dart';
 import 'package:apoio_app/core/errors/management_failure.dart';
 import 'package:apoio_app/data/models/stock_item.dart';
@@ -67,8 +69,10 @@ class _PublicationFormState extends State<PublicationForm> {
       ),
       body: Align(
         alignment: Alignment.topCenter,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 700),
+        child: PageBody(
+          padding: EdgeInsets.zero,
+          maxWidth: PublicLayout.pageWidth(context, compactWidth: 700),
+          contentMaxWidth: 700,
           child: ListView(
             padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
             children: [

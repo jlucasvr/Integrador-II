@@ -9,8 +9,13 @@ import 'package:flutter_map_vector_tiles/flutter_map_vector_tiles.dart' as vt;
 import 'package:latlong2/latlong.dart';
 
 class PointLocationCard extends StatefulWidget {
-  const PointLocationCard({super.key, required this.point});
+  const PointLocationCard({
+    super.key,
+    required this.point,
+    this.mapHeight = 240,
+  });
   final SupportPoint point;
+  final double mapHeight;
   @override
   State<PointLocationCard> createState() => _PointLocationCardState();
 }
@@ -93,7 +98,7 @@ class _PointLocationCardState extends State<PointLocationCard> {
                 top: Radius.circular(28),
               ),
               child: SizedBox(
-                height: 240,
+                height: widget.mapHeight,
                 child: Stack(
                   children: [
                     Semantics(

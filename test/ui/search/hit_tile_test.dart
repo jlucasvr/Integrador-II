@@ -5,8 +5,10 @@ import 'package:apoio_app/data/models/search_query.dart';
 import 'package:apoio_app/ui/search/view_models/result_resources.dart';
 import 'package:apoio_app/data/models/support_point.dart';
 import 'package:apoio_app/ui/core/theme/wireframe_theme.dart';
+import 'package:apoio_app/ui/core/widgets/stock_updated_at.dart';
 import 'package:apoio_app/ui/search/widgets/hit_tile.dart';
 import 'package:apoio_app/ui/search/widgets/result_badge.dart';
+import 'package:apoio_app/ui/support_points/widgets/resource_availability_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -54,6 +56,45 @@ Widget card(
 );
 
 void main() {
+  testWidgets(
+    'indicadores mantêm altura e ficam centralizados em todos os estados',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      double? previousCardHeight;
+      for (final quantity in <int?>[null, 120, 25, 5, 0]) {
+        for (final available in [true, false]) {
+          await tester.pumpWidget(
+            card(
+              hit(
+                Resource('Água', 'Água', 'garrafas', available, true, quantity),
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+          final slot = tester.getRect(
+            find.byKey(const ValueKey('result-stock-Água')),
+          );
+          final content = tester.getRect(
+            find.byType(ResourceAvailabilityIndicator),
+          );
+          final height = tester.getSize(find.byType(HitTile)).height;
+          expect(slot.height, lessThan(48));
+          if (available && quantity == 120) {
+            expect(slot.height, closeTo(content.height, .1));
+          }
+          expect(content.center.dy, closeTo(slot.center.dy, .1));
+          expect(content.center.dx, closeTo(slot.center.dx, .1));
+          if (previousCardHeight != null) {
+            expect(height, closeTo(previousCardHeight, .1));
+          }
+          previousCardHeight = height;
+          expect(tester.takeException(), isNull);
+        }
+      }
+    },
+  );
   for (final city in [
     'São Vicente',
     'São José dos Campos e região metropolitana',
@@ -143,6 +184,16 @@ void main() {
       expect(find.text('Cesta básica'), findsNothing);
       expect(find.byType(Divider), findsOneWidget);
       expect(find.byType(LinearProgressIndicator), findsNWidgets(2));
+      expect(find.byType(StockUpdatedAt), findsOneWidget);
+      expect(find.text('18/11/2026'), findsOneWidget);
+      expect(
+        tester.getRect(find.text('18/11/2026')).top,
+        greaterThan(tester.getRect(find.text('Água mineral')).bottom),
+      );
+      expect(
+        tester.getRect(find.text('18/11/2026')).bottom,
+        lessThan(tester.getRect(find.byType(FilledButton)).top),
+      );
       expect(tester.takeException(), isNull);
     },
   );
@@ -176,7 +227,8 @@ void main() {
         tester.getRect(find.text('1,2 km')).top,
         tester.getRect(find.text('Centro')).top,
       );
-      expect(find.text('14/10/2026'), findsOneWidget);
+      expect(find.text('13/10/2026'), findsOneWidget);
+      expect(find.text('14/10/2026'), findsNothing);
       expect(find.textContaining('10h'), findsNothing);
       expect(find.textContaining('120'), findsNothing);
       expect(
@@ -204,6 +256,12 @@ void main() {
       expect(find.byType(LinearProgressIndicator), findsNothing);
       final status = find.text(available ? 'Disponível' : 'Indisponível');
       expect(status, findsOneWidget);
+      expect(
+        find.byIcon(available ? Icons.check_rounded : Icons.close_rounded),
+        findsOneWidget,
+      );
+      expect(find.byIcon(Icons.check_circle_outline), findsNothing);
+      expect(find.byIcon(Icons.remove_circle_outline), findsNothing);
       expect(
         tester.widget<Text>(status).style!.color,
         available ? const Color(0xff23804b) : const Color(0xffc3473b),

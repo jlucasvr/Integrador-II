@@ -1,3 +1,5 @@
+import 'package:apoio_app/ui/core/layout/page_body.dart';
+import 'package:apoio_app/ui/core/layout/public_layout.dart';
 import 'package:apoio_app/ui/core/widgets/app_top_bar.dart';
 import 'dart:math';
 
@@ -117,8 +119,10 @@ class _PointFormState extends State<PointForm> {
         onBack: () => Navigator.of(context).maybePop(),
       ),
       body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 700),
+        child: PageBody(
+          padding: EdgeInsets.zero,
+          maxWidth: PublicLayout.pageWidth(context, compactWidth: 700),
+          contentMaxWidth: 700,
           child: FutureBuilder<List<Map<String, dynamic>>>(
             future: _institutions,
             builder: (context, snapshot) {

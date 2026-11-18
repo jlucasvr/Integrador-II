@@ -5,6 +5,7 @@ import 'package:apoio_app/ui/support_points/formatters/resource_availability.dar
 import 'package:apoio_app/ui/support_points/views/detail_page.dart';
 import 'package:apoio_app/ui/support_points/widgets/point_actions.dart';
 import 'package:apoio_app/ui/support_points/widgets/resource_card.dart';
+import 'package:apoio_app/ui/support_points/widgets/resource_availability_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -27,6 +28,68 @@ const point = SupportPoint(
 );
 
 void main() {
+  for (final available in [true, false]) {
+    testWidgets(
+      'estoque oculto alinha à esquerda e centraliza na vertical: $available',
+      (tester) async {
+        tester.view.physicalSize = const Size(390, 844);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: wireframeTheme(),
+            home: Scaffold(
+              body: Padding(
+                padding: const EdgeInsets.all(20),
+                child: ResourceCard(
+                  resource: Resource(
+                    'Roupas',
+                    'Roupas',
+                    'peças',
+                    available,
+                    true,
+                    null,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+        final indicator = find.byType(ResourceAvailabilityIndicator);
+        final icon = find.descendant(
+          of: indicator,
+          matching: find.byIcon(
+            available ? Icons.check_rounded : Icons.close_rounded,
+          ),
+        );
+        final status = find.text(available ? 'Disponível' : 'Indisponível');
+        expect(icon, findsOneWidget);
+        expect(status, findsOneWidget);
+        expect(
+          tester.widget<Text>(status).style!.color,
+          available ? const Color(0xff23804b) : const Color(0xffc3473b),
+        );
+        expect(
+          find.text('confirme no contato'),
+          available ? findsOneWidget : findsNothing,
+        );
+        expect(find.text('·'), available ? findsOneWidget : findsNothing);
+        expect(find.text('Nível de estoque não informado'), findsNothing);
+        expect(find.byIcon(Icons.check_circle_outline), findsNothing);
+        expect(find.byIcon(Icons.remove_circle_outline), findsNothing);
+        expect(find.byType(LinearProgressIndicator), findsNothing);
+        final group = tester.getRect(
+          find.descendant(of: indicator, matching: find.byType(Wrap)),
+        );
+        expect(group.left, closeTo(tester.getRect(indicator).left, .1));
+        expect(
+          group.center.dy,
+          closeTo(tester.getRect(indicator).center.dy, .1),
+        );
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
   test('faixas respeitam limites e não estimam quantidade privada', () {
     Resource item(int? quantity, {bool available = true}) =>
         Resource('Água', 'Água', 'garrafas', available, true, quantity);
@@ -77,7 +140,9 @@ void main() {
       expect(find.text('Poucas unidades'), findsOneWidget);
       expect(find.text('Sem estoque'), findsNWidgets(2));
       expect(find.text('Baixa'), findsOneWidget);
-      expect(find.text('Disponível · confirme no contato'), findsOneWidget);
+      expect(find.text('Disponível'), findsOneWidget);
+      expect(find.text('confirme no contato'), findsOneWidget);
+      expect(find.text('Nível de estoque não informado'), findsNothing);
       expect(find.textContaining('120'), findsNothing);
       expect(find.textContaining('25'), findsNothing);
       expect(find.text('Receber'), findsNothing);

@@ -1,3 +1,5 @@
+import 'package:apoio_app/ui/core/layout/page_body.dart';
+import 'package:apoio_app/ui/core/layout/public_layout.dart';
 import 'package:apoio_app/ui/core/theme/floating_navigation_style.dart';
 import 'package:apoio_app/core/errors/management_failure.dart';
 import 'package:apoio_app/data/models/managed_point.dart';
@@ -179,8 +181,13 @@ class _ManagementPageState extends State<ManagementPage> {
                 Expanded(
                   child: Align(
                     alignment: Alignment.topCenter,
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 700),
+                    child: PageBody(
+                      padding: EdgeInsets.zero,
+                      maxWidth: PublicLayout.pageWidth(
+                        context,
+                        compactWidth: 700,
+                      ),
+                      contentMaxWidth: 700,
                       child: _history
                           ? HistoryView(api: api, item: item)
                           : MovementView(
@@ -216,7 +223,10 @@ class _ManagementPageState extends State<ManagementPage> {
       child: Scaffold(
         appBar: AppTopBar(
           sectionTitle: title,
-          maxWidth: account == null ? 620 : 1200,
+          maxWidth: PublicLayout.pageWidth(
+            context,
+            compactWidth: account == null ? 620 : 1200,
+          ),
           managementActive: true,
           navigationEnabled: !_loggingOut && !_mutating,
           onBack: _back,
@@ -230,8 +240,21 @@ class _ManagementPageState extends State<ManagementPage> {
         body: Align(
           alignment: Alignment.topCenter,
           child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: account == null ? 900 : 1200),
-            child: content,
+            constraints: BoxConstraints(
+              maxWidth: PublicLayout.pageWidth(
+                context,
+                compactWidth: account == null ? 900 : 1200,
+              ),
+            ),
+            child: account == null && PublicLayout.isDesktop(context)
+                ? Align(
+                    alignment: Alignment.topLeft,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 700),
+                      child: content,
+                    ),
+                  )
+                : content,
           ),
         ),
       ),

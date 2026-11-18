@@ -1,3 +1,5 @@
+import 'package:apoio_app/ui/core/layout/page_body.dart';
+import 'package:apoio_app/ui/core/layout/public_layout.dart';
 import 'package:apoio_app/ui/core/widgets/app_top_bar.dart';
 import 'package:apoio_app/core/errors/management_failure.dart';
 import 'package:apoio_app/core/utils/normalize.dart';
@@ -73,8 +75,10 @@ class _LinkStockItemPageState extends State<LinkStockItemPage> {
         onBack: () => Navigator.of(context).maybePop(),
       ),
       body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 700),
+        child: PageBody(
+          padding: EdgeInsets.zero,
+          maxWidth: PublicLayout.pageWidth(context, compactWidth: 700),
+          contentMaxWidth: 700,
           child: CustomScrollView(
             controller: _scroll,
             slivers: [

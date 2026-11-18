@@ -5,6 +5,8 @@ import 'package:apoio_app/data/repositories/management_repository.dart';
 import 'package:apoio_app/data/repositories/point_repository.dart';
 import 'package:apoio_app/data/services/location_service.dart';
 import 'package:apoio_app/ui/core/layout/page_body.dart';
+import 'package:apoio_app/ui/core/layout/public_layout.dart';
+import 'package:apoio_app/ui/core/layout/adaptive_card_grid.dart';
 import 'package:apoio_app/ui/core/widgets/app_top_bar.dart';
 import 'package:apoio_app/ui/core/widgets/demo_search_notice.dart';
 import 'package:apoio_app/ui/search/view_models/location_view_model.dart';
@@ -190,9 +192,11 @@ class _ResultsPageState extends State<ResultsPage> {
       extendBodyBehindAppBar: true,
       resizeToAvoidBottomInset: false,
       appBar: AppTopBar(
+        maxWidth: PublicLayout.contentWidth(context),
         onManagement: () => openManagement(context, widget.managementApi),
       ),
       bottomNavigationBar: SearchDock(
+        maxWidth: PublicLayout.isExpanded(context) ? 800 : 620,
         formKey: _form,
         controller: _item,
         location: _location,
@@ -209,6 +213,7 @@ class _ResultsPageState extends State<ResultsPage> {
               ),
               controller: _scroll,
               child: PageBody(
+                maxWidth: PublicLayout.contentWidth(context),
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
                 child: FutureBuilder<List<SearchHit>>(
                   future: _viewModel.request,
@@ -301,14 +306,36 @@ class _ResultsPageState extends State<ResultsPage> {
                                 'Nenhum resultado exato. Alternativas da categoria ${hits.first.resource.category}:',
                               ),
                             ),
-                          ...hits.map(
-                            (hit) => HitTile(
-                              hit: hit,
-                              resources: resultResources(hit, _viewModel.query),
-                              intent: _viewModel.query.intent,
-                              onOpen: () => _open(hit),
+                          if (PublicLayout.isExpanded(context))
+                            AdaptiveCardGrid(
+                              key: const ValueKey('results-grid'),
+                              children: hits
+                                  .map(
+                                    (hit) => HitTile(
+                                      hit: hit,
+                                      topSpacing: 0,
+                                      resources: resultResources(
+                                        hit,
+                                        _viewModel.query,
+                                      ),
+                                      intent: _viewModel.query.intent,
+                                      onOpen: () => _open(hit),
+                                    ),
+                                  )
+                                  .toList(),
+                            )
+                          else
+                            ...hits.map(
+                              (hit) => HitTile(
+                                hit: hit,
+                                resources: resultResources(
+                                  hit,
+                                  _viewModel.query,
+                                ),
+                                intent: _viewModel.query.intent,
+                                onOpen: () => _open(hit),
+                              ),
                             ),
-                          ),
                         ],
                         const SizedBox(height: 24),
                       ],
@@ -325,7 +352,9 @@ class _ResultsPageState extends State<ResultsPage> {
                 child: Align(
                   alignment: Alignment.topCenter,
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 620),
+                    constraints: BoxConstraints(
+                      maxWidth: PublicLayout.contentWidth(context),
+                    ),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       child: Align(
