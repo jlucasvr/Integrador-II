@@ -71,11 +71,13 @@ class HitTile extends StatelessWidget {
                           hit.point.name,
                           style: theme.textTheme.titleMedium,
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          hit.point.institution,
-                          style: theme.textTheme.bodySmall,
-                        ),
+                        if (hit.point.institution != hit.point.name) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            hit.point.institution,
+                            style: theme.textTheme.bodySmall,
+                          ),
+                        ],
                       ],
                     ),
                   ),

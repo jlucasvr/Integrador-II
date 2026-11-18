@@ -12,17 +12,24 @@ if (!existsSync(join(webRoot, 'main.dart.js'))) {
   throw new Error('Execute a prévia na pasta backend de um pacote gerado com iniciar.ps1 -Action package.');
 }
 
-const db = openDatabase(':memory:');
+const databasePath = process.env.PREVIEW_DB_PATH || ':memory:';
+const db = openDatabase(databasePath);
 const password = randomBytes(12).toString('base64url');
-seedDemo(db, password);
+const fresh = db.prepare('SELECT COUNT(*) AS total FROM users').get().total === 0;
+if (fresh) seedDemo(db, process.env.DEMO_PASSWORD || password);
 const app = express();
 app.use(express.static(webRoot));
 app.use(createApp(adaptSqlite(db), { demo: true }));
 
-const server = app.listen(0, '127.0.0.1', () => {
+const port = Number(process.env.PREVIEW_PORT || 0);
+if (!Number.isInteger(port) || port < 0 || port > 65535) throw new Error('PREVIEW_PORT inválida.');
+const server = app.listen(port, '127.0.0.1', () => {
   console.log(`Avaliação local: http://127.0.0.1:${server.address().port}`);
-  console.log('Dados fictícios em memória. Encerrar o processo descarta as alterações.');
-  console.log(`Gestor de avaliação: gestor@example.test | Senha temporária: ${password}`);
+  console.log(databasePath === ':memory:'
+    ? 'Dados demonstrativos em memória. Encerrar descarta alterações.'
+    : 'Dados de desenvolvimento em banco local persistente.');
+  if (fresh) console.log(`Gestor de avaliação: gestor@example.test | Senha temporária: ${process.env.DEMO_PASSWORD || password}`);
+  else console.log('Use a senha de avaliação definida na primeira execução deste banco.');
 });
 
 function shutdown() {

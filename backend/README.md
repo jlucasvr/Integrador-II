@@ -33,10 +33,12 @@ Busca: `q` obrigatório; `intent=help` ou `donate`; `location` opcional filtra t
 
 Resposta: `{ "data": [ { "point": {...}, "resource": {...}, "alternative": false } ], "meta": {...} }`.
 
-Sem coordenadas, `distanceKm=null`. O Flutter oferece a opção de buscar sem
-localização se a captura falhar. Quando o visitante compartilha sua posição,
+Sem coordenadas, `distanceKm=null` para integrações diretas. Na interface Flutter,
+a localização é obrigatória antes da busca. Quando o visitante compartilha sua posição,
 o cliente envia `lat` e `lon` e inclui `radiusKm` se houver um raio selecionado.
-Os nomes, endereços e coordenadas do seed são ilustrativos.
+A prévia suporta SQLite persistente com `PREVIEW_DB_PATH` e porta fixa com
+`PREVIEW_PORT`. Os cadastros locais ficam no banco, sem arquivos de população
+específicos da cidade.
 
 Cada ponto retorna um recurso representativo. Na busca por ajuda, o servidor
 prefere um item disponível entre as correspondências elegíveis do ponto. Aplica

@@ -98,11 +98,13 @@ class _DetailPageState extends State<DetailPage> {
                             height: 1.25,
                           ),
                         ),
-                        const SizedBox(height: 6),
-                        Text(
-                          point.institution,
-                          style: theme.textTheme.bodySmall,
-                        ),
+                        if (point.institution != point.name) ...[
+                          const SizedBox(height: 6),
+                          Text(
+                            point.institution,
+                            style: theme.textTheme.bodySmall,
+                          ),
+                        ],
                       ],
                     ),
                   ),
