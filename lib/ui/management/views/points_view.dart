@@ -60,7 +60,7 @@ class _PointsViewState extends State<PointsView> {
             normalize('${point.name} ${point.institution}').contains(_query),
       );
       return ListView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
         children: [
           OperationHeading(
             title: 'Pontos sob sua gestão',

@@ -1,3 +1,4 @@
+import 'package:apoio_app/ui/core/widgets/app_top_bar.dart';
 import 'dart:math';
 
 import 'package:apoio_app/core/errors/management_failure.dart';
@@ -43,7 +44,7 @@ class _PointFormState extends State<PointForm> {
       p?.hours ?? '',
       p?.contact ?? '',
       p?.latitude.toString() ?? '',
-      p?.longitude.toString() ?? ''
+      p?.longitude.toString() ?? '',
     ].map((text) => TextEditingController(text: text)).toList();
     _institution = p?.institutionId;
     _active = p?.active ?? true;
@@ -63,30 +64,37 @@ class _PointFormState extends State<PointForm> {
     if (widget.point == null && _creationKey == null) {
       final random = Random.secure();
       _creationKey = List.generate(
-              16, (_) => random.nextInt(256).toRadixString(16).padLeft(2, '0'))
-          .join();
+        16,
+        (_) => random.nextInt(256).toRadixString(16).padLeft(2, '0'),
+      ).join();
     }
     setState(() {
       _busy = true;
       _error = null;
     });
     try {
-      await widget.api.savePoint({
-        'institution_id': _institution,
-        for (var i = 0; i < 5; i++)
-          ['name', 'address', 'region', 'hours', 'contact'][i]:
-              _fields[i].text.trim(),
-        'latitude': double.parse(_fields[5].text.replaceAll(',', '.')),
-        'longitude': double.parse(_fields[6].text.replaceAll(',', '.')),
-        'active': _active,
-      }, point: widget.point, idempotencyKey: _creationKey);
+      await widget.api.savePoint(
+        {
+          'institution_id': _institution,
+          for (var i = 0; i < 5; i++)
+            ['name', 'address', 'region', 'hours', 'contact'][i]: _fields[i]
+                .text
+                .trim(),
+          'latitude': double.parse(_fields[5].text.replaceAll(',', '.')),
+          'longitude': double.parse(_fields[6].text.replaceAll(',', '.')),
+          'active': _active,
+        },
+        point: widget.point,
+        idempotencyKey: _creationKey,
+      );
       if (mounted) Navigator.pop(context, true);
     } on ManagementFailure catch (e) {
       if (mounted) {
         setState(() {
           _error = e.message;
           _retryCreate = _retryCreate || (widget.point == null && e.uncertain);
-          _blocked = (e.uncertain && !_retryCreate) ||
+          _blocked =
+              (e.uncertain && !_retryCreate) ||
               e.status == 409 ||
               e.status == 401 ||
               e.status == 403;
@@ -100,122 +108,131 @@ class _PointFormState extends State<PointForm> {
 
   @override
   Widget build(BuildContext context) => PopScope(
-        canPop: !_busy,
-        child: Scaffold(
-          appBar: AppBar(
-              title: Text(
-                  widget.point == null ? 'Cadastrar ponto' : 'Editar ponto'),
-              automaticallyImplyLeading: !_busy),
-          body: Center(
-              child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 700),
-                  child: FutureBuilder<List<Map<String, dynamic>>>(
-                    future: _institutions,
-                    builder: (context, snapshot) {
-                      if (snapshot.hasError) {
-                        return const Padding(
-                            padding: EdgeInsets.all(24),
-                            child: Text(
-                                'Não foi possível carregar as instituições. Volte e tente novamente.'));
-                      }
-                      if (!snapshot.hasData) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-                      return Form(
-                          key: _form,
-                          child: ListView(
-                              padding: const EdgeInsets.all(24),
-                              children: [
-                                DropdownButtonFormField<String>(
-                                    initialValue: _institution,
-                                    isExpanded: true,
-                                    decoration: const InputDecoration(
-                                        labelText: 'Instituição'),
-                                    items: snapshot.data!
-                                        .map((i) => DropdownMenuItem(
-                                            value: i['id'] as String,
-                                            child: Text(i['name'] as String)))
-                                        .toList(),
-                                    onChanged:
-                                        !_editable || widget.point != null
-                                            ? null
-                                            : (v) => _institution = v,
-                                    validator: (v) => v == null
-                                        ? 'Selecione uma instituição.'
-                                        : null),
-                                const SizedBox(height: 16),
-                                for (var i = 0; i < _fields.length; i++)
-                                  Padding(
-                                      padding:
-                                          const EdgeInsets.only(bottom: 16),
-                                      child: TextFormField(
-                                        controller: _fields[i],
-                                        enabled: _editable,
-                                        maxLength: [
-                                          150,
-                                          300,
-                                          150,
-                                          250,
-                                          250,
-                                          24,
-                                          24
-                                        ][i],
-                                        decoration: InputDecoration(
-                                            labelText: [
-                                          'Nome do ponto',
-                                          'Endereço',
-                                          'Cidade / região',
-                                          'Horário de atendimento',
-                                          'Contato (opcional)',
-                                          'Latitude',
-                                          'Longitude'
-                                        ][i]),
-                                        keyboardType: i >= 5
-                                            ? const TextInputType
-                                                .numberWithOptions(
-                                                decimal: true, signed: true)
-                                            : TextInputType.text,
-                                        validator: (v) {
-                                          if (i == 4) return null;
-                                          if (v == null || v.trim().isEmpty) {
-                                            return 'Preencha este campo.';
-                                          }
-                                          if (i >= 5) {
-                                            final n = double.tryParse(
-                                                v.replaceAll(',', '.'));
-                                            if (n == null ||
-                                                !n.isFinite ||
-                                                n.abs() > (i == 5 ? 90 : 180)) {
-                                              return 'Informe uma coordenada válida.';
-                                            }
-                                          }
-                                          return null;
-                                        },
-                                      )),
-                                SwitchListTile(
-                                    contentPadding: EdgeInsets.zero,
-                                    title: const Text('Ponto ativo'),
-                                    subtitle: const Text(
-                                        'Pontos inativos ficam fora da consulta pública.'),
-                                    value: _active,
-                                    onChanged: !_editable
-                                        ? null
-                                        : (v) => setState(() => _active = v)),
-                                if (_error != null)
-                                  Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          vertical: 16),
-                                      child: Text('$_error$_recoveryHint')),
-                                FilledButton(
-                                    onPressed: _busy || _blocked ? null : _save,
-                                    child: Text(_busy
-                                        ? 'Salvando…'
-                                        : _retryCreate
-                                            ? 'Confirmar cadastro'
-                                            : 'Salvar ponto')),
-                              ]));
-                    },
-                  ))),
+    canPop: !_busy,
+    child: Scaffold(
+      appBar: AppTopBar(
+        sectionTitle: widget.point == null ? 'Cadastrar ponto' : 'Editar ponto',
+        showManagement: false,
+        navigationEnabled: !_busy,
+        onBack: () => Navigator.of(context).maybePop(),
+      ),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 700),
+          child: FutureBuilder<List<Map<String, dynamic>>>(
+            future: _institutions,
+            builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                return const Padding(
+                  padding: EdgeInsets.all(24),
+                  child: Text(
+                    'Não foi possível carregar as instituições. Volte e tente novamente.',
+                  ),
+                );
+              }
+              if (!snapshot.hasData) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              return Form(
+                key: _form,
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                  children: [
+                    DropdownButtonFormField<String>(
+                      initialValue: _institution,
+                      isExpanded: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Instituição',
+                      ),
+                      items: snapshot.data!
+                          .map(
+                            (i) => DropdownMenuItem(
+                              value: i['id'] as String,
+                              child: Text(i['name'] as String),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: !_editable || widget.point != null
+                          ? null
+                          : (v) => _institution = v,
+                      validator: (v) =>
+                          v == null ? 'Selecione uma instituição.' : null,
+                    ),
+                    const SizedBox(height: 16),
+                    for (var i = 0; i < _fields.length; i++)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: TextFormField(
+                          controller: _fields[i],
+                          enabled: _editable,
+                          maxLength: [150, 300, 150, 250, 250, 24, 24][i],
+                          decoration: InputDecoration(
+                            labelText: [
+                              'Nome do ponto',
+                              'Endereço',
+                              'Cidade / região',
+                              'Horário de atendimento',
+                              'Contato (opcional)',
+                              'Latitude',
+                              'Longitude',
+                            ][i],
+                          ),
+                          keyboardType: i >= 5
+                              ? const TextInputType.numberWithOptions(
+                                  decimal: true,
+                                  signed: true,
+                                )
+                              : TextInputType.text,
+                          validator: (v) {
+                            if (i == 4) return null;
+                            if (v == null || v.trim().isEmpty) {
+                              return 'Preencha este campo.';
+                            }
+                            if (i >= 5) {
+                              final n = double.tryParse(v.replaceAll(',', '.'));
+                              if (n == null ||
+                                  !n.isFinite ||
+                                  n.abs() > (i == 5 ? 90 : 180)) {
+                                return 'Informe uma coordenada válida.';
+                              }
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Ponto ativo'),
+                      subtitle: const Text(
+                        'Pontos inativos ficam fora da consulta pública.',
+                      ),
+                      value: _active,
+                      onChanged: !_editable
+                          ? null
+                          : (v) => setState(() => _active = v),
+                    ),
+                    if (_error != null)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        child: Text('$_error$_recoveryHint'),
+                      ),
+                    FilledButton(
+                      onPressed: _busy || _blocked ? null : _save,
+                      child: Text(
+                        _busy
+                            ? 'Salvando…'
+                            : _retryCreate
+                            ? 'Confirmar cadastro'
+                            : 'Salvar ponto',
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
         ),
-      );
+      ),
+    ),
+  );
 }

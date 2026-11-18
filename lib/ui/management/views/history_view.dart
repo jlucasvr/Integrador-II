@@ -43,7 +43,7 @@ class _HistoryViewState extends State<HistoryView> {
         return LoadFailure(error: snapshot.error, onRetry: _viewModel.reload);
       }
       return ListView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
         children: [
           OperationHeading(
             title: widget.item.name,

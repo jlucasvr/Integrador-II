@@ -158,7 +158,7 @@ void main() {
       expect(find.text('Este item já está vinculado.'), findsOneWidget);
       expect(find.byTooltip('Vincular Cobertor'), findsNothing);
       expect(find.byTooltip('Vincular Água potável'), findsOneWidget);
-      await tester.tap(find.byType(BackButton));
+      await tester.tap(find.byTooltip('Voltar'));
       await tester.pumpAndSettle();
       expect(find.text('Saldo: 0 unidades'), findsOneWidget);
       expect(catalogReads, 3);

@@ -1,3 +1,4 @@
+import 'package:apoio_app/ui/core/widgets/app_top_bar.dart';
 import 'package:apoio_app/core/errors/management_failure.dart';
 import 'package:apoio_app/data/models/stock_item.dart';
 import 'package:apoio_app/data/repositories/management_repository.dart';
@@ -58,16 +59,18 @@ class _PublicationFormState extends State<PublicationForm> {
   Widget build(BuildContext context) => PopScope(
     canPop: !_busy,
     child: Scaffold(
-      appBar: AppBar(
-        title: const Text('Publicação do item'),
-        automaticallyImplyLeading: !_busy,
+      appBar: AppTopBar(
+        sectionTitle: 'Publicação do item',
+        showManagement: false,
+        navigationEnabled: !_busy,
+        onBack: () => Navigator.of(context).maybePop(),
       ),
       body: Align(
         alignment: Alignment.topCenter,
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 700),
           child: ListView(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
             children: [
               Text(
                 widget.item.name,

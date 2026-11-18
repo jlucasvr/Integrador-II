@@ -92,7 +92,7 @@ class _MunicipalityViewState extends State<MunicipalityView> {
         if (id != null) {
           final institution = institutions.where((i) => i.id == id).firstOrNull;
           return ListView(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
             children: [
               Align(
                 alignment: Alignment.centerLeft,
@@ -171,7 +171,7 @@ class _MunicipalityViewState extends State<MunicipalityView> {
         return CustomScrollView(
           slivers: [
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
               sliver: SliverToBoxAdapter(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -1,3 +1,4 @@
+import 'package:apoio_app/ui/core/theme/floating_navigation_style.dart';
 import 'package:apoio_app/core/errors/management_failure.dart';
 import 'package:apoio_app/data/models/managed_point.dart';
 import 'package:apoio_app/data/models/stock_item.dart';
@@ -168,6 +169,7 @@ class _ManagementPageState extends State<ManagementPage> {
                         ),
                       ),
                       TextButton(
+                        style: floatingNavigationStyle(context),
                         onPressed: _mutating ? null : _back,
                         child: const Text('Voltar ao estoque'),
                       ),
