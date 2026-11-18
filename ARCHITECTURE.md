@@ -39,7 +39,7 @@ lib/
     support_points/
       formatters/                # Apresentação da disponibilidade pública
       views/                     # Detalhes de um ponto
-      widgets/                   # Tabela de recursos
+      widgets/                   # Cartões de itens, mapa e ações de contato
 test/
   data/repositories/             # Contratos de busca remota e demonstrativa
   fixtures/                      # API simulada, sem alterar o banco local
@@ -63,7 +63,11 @@ O serviço é injetável para testar o fluxo sem acessar a localização real.
 filtros aplicáveis junto à consulta. Sem coordenadas, a consulta omite `lat`,
 `lon` e `radiusKm`. A seleção do recurso e das alternativas ocorre no repositório
 demonstrativo ou na API, antes de entregar resultados à interface.
-`SearchDock` mantém as coordenadas e o formulário fixos na base da home e dos
+`SearchPage` conduz intenção, categoria/item e captura explícita de localização.
+Sem coordenadas, a interface não libera a consulta. O contrato da API continua
+aceitando coordenadas opcionais para integrações. O retorno dos resultados
+exibe um resumo das escolhas e permite editá-las sem apagar o estado.
+`SearchDock` mantém as coordenadas e o formulário fixos na base dos
 resultados, inclusive com rolagem ou teclado aberto. Novos termos são consultados
 na mesma tela de resultados, preservando coordenadas e filtros.
 

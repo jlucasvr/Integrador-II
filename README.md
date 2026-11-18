@@ -4,8 +4,9 @@ Front-end em Flutter e API em Node.js/Express com PostgreSQL. O SQLite continua
 na prévia acadêmica descartável e nos testes locais sem Docker.
 
 `iniciar.ps1 -Api` conecta a busca e a gestão à API local. Sem `-Api`, a busca
-abre em **Demonstração · dados fictícios**, com dados embutidos e sem GPS ou
-filtro de distância. Ao rodar o Flutter diretamente, `API_BASE_URL` seleciona a
+abre em **Demonstração · dados fictícios**, com dados embutidos e sem
+filtro de distância. A interface exige ativar a localização antes de buscar.
+Ao rodar o Flutter diretamente, `API_BASE_URL` seleciona a
 API por padrão. Use `MOCK_SEARCH=true` para escolher a demonstração de forma
 explícita, inclusive quando houver uma URL configurada para gestão.
 
@@ -88,10 +89,11 @@ e o [relatório do redesign](docs/redesign-gestao-prefeitura.md).
 - Historico com saldo anterior/resultante e nome do responsavel.
 - Tratamento de falhas, conflito de estoque, sessao expirada e logout.
 
-Na busca conectada, o navegador pode fornecer latitude e longitude. Use
-**Buscar sem localização** para consultar sem pedir acesso ao GPS.
-O termo e a intenção são preservados. Você pode habilitar a distância depois,
-usando o controle de localização nos resultados. A API calcula a distância em
+O início tem três etapas: intenção, item/categoria e localização. Ative
+**Usar minha localização** para liberar os resultados. Se a captura falhar,
+é possível tentar novamente; não há opção de buscar sem localização.
+Ao voltar dos resultados, uma tela permite editar intenção, categorias e busca,
+preservando localização e filtros, ou voltar ao passo a passo. A API calcula a distância em
 linha reta. Os dados do seed são ilustrativos, embora o modo API
 permita consultar e editar os registros persistidos.
 Gestores podem cadastrar e editar pontos (incluindo contato, coordenadas e
