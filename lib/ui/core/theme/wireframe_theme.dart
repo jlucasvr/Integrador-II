@@ -35,10 +35,11 @@ ThemeData wireframeTheme() {
       scrolledUnderElevation: 0,
       centerTitle: false,
       titleTextStyle: TextStyle(
-          fontFamily: 'Poppins',
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-          color: ink),
+        fontFamily: 'Poppins',
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+        color: ink,
+      ),
       shape: Border(bottom: BorderSide(color: outline)),
     ),
     inputDecorationTheme: const InputDecorationTheme(
@@ -46,101 +47,153 @@ ThemeData wireframeTheme() {
       fillColor: Colors.white,
       contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       border: OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(32)),
-          borderSide: BorderSide(color: controlOutline)),
+        borderRadius: BorderRadius.all(Radius.circular(32)),
+        borderSide: BorderSide(color: controlOutline),
+      ),
       enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(32)),
-          borderSide: BorderSide(color: controlOutline)),
+        borderRadius: BorderRadius.all(Radius.circular(32)),
+        borderSide: BorderSide(color: controlOutline),
+      ),
       focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(32)),
-          borderSide: BorderSide(color: ink, width: 2)),
+        borderRadius: BorderRadius.all(Radius.circular(32)),
+        borderSide: BorderSide(color: ink, width: 2),
+      ),
     ),
     filledButtonTheme: FilledButtonThemeData(
-        style: FilledButton.styleFrom(
-                backgroundColor: ink,
-                foregroundColor: Colors.white,
-                side: const BorderSide(color: ink),
-                elevation: 0,
-                shape: shape,
-                minimumSize: const Size(0, 44),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12))
-            .copyWith(overlayColor: InteractionColors.overlay(dark: true))),
+      style: FilledButton.styleFrom(
+        backgroundColor: ink,
+        foregroundColor: Colors.white,
+        side: const BorderSide(color: ink),
+        elevation: 0,
+        shape: shape,
+        minimumSize: const Size(0, 48),
+        fixedSize: const Size.fromHeight(48),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+      ).copyWith(overlayColor: InteractionColors.overlay(dark: true)),
+    ),
     outlinedButtonTheme: OutlinedButtonThemeData(
-        style: OutlinedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: ink,
-                side: const BorderSide(color: outline),
-                shape: shape,
-                minimumSize: const Size(0, 44),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 12))
-            .copyWith(overlayColor: InteractionColors.overlay())),
+      style: OutlinedButton.styleFrom(
+        backgroundColor: Colors.white,
+        foregroundColor: ink,
+        side: const BorderSide(color: outline),
+        shape: shape,
+        minimumSize: const Size(0, 48),
+        fixedSize: const Size.fromHeight(48),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+      ).copyWith(overlayColor: InteractionColors.overlay()),
+    ),
     textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(foregroundColor: ink, shape: shape)
-            .copyWith(overlayColor: InteractionColors.overlay())),
+      style: TextButton.styleFrom(
+        foregroundColor: ink,
+        backgroundColor: Colors.white,
+        shape: shape,
+        side: const BorderSide(color: outline),
+        minimumSize: const Size(0, 48),
+        fixedSize: const Size.fromHeight(48),
+        elevation: 0,
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+        textStyle: const TextStyle(
+          fontFamily: 'Poppins',
+          fontSize: 14,
+          fontWeight: FontWeight.w700,
+        ),
+      ).copyWith(overlayColor: InteractionColors.overlay()),
+    ),
     iconButtonTheme: IconButtonThemeData(
-        style: ButtonStyle(overlayColor: InteractionColors.overlay())),
+      style: IconButton.styleFrom(
+        minimumSize: const Size.square(48),
+        fixedSize: const Size.square(48),
+        backgroundColor: Colors.white,
+        foregroundColor: ink,
+        shape: const CircleBorder(side: BorderSide(color: outline)),
+        elevation: 0,
+      ).copyWith(overlayColor: InteractionColors.overlay()),
+    ),
     segmentedButtonTheme: SegmentedButtonThemeData(
-        style: ButtonStyle(
-      shape: const WidgetStatePropertyAll(shape),
-      overlayColor: InteractionColors.overlay(),
-      minimumSize: const WidgetStatePropertyAll(Size(0, 44)),
-      side: const WidgetStatePropertyAll(BorderSide(color: outline)),
-      backgroundColor: WidgetStateProperty.resolveWith((states) =>
-          states.contains(WidgetState.selected) ? ink : Colors.white),
-      foregroundColor: WidgetStateProperty.resolveWith((states) =>
-          states.contains(WidgetState.selected) ? Colors.white : ink),
-    )),
+      style: ButtonStyle(
+        shape: const WidgetStatePropertyAll(shape),
+        overlayColor: InteractionColors.overlay(),
+        minimumSize: const WidgetStatePropertyAll(Size(0, 48)),
+        side: const WidgetStatePropertyAll(BorderSide(color: outline)),
+        backgroundColor: WidgetStateProperty.resolveWith(
+          (states) =>
+              states.contains(WidgetState.selected) ? ink : Colors.white,
+        ),
+        foregroundColor: WidgetStateProperty.resolveWith(
+          (states) =>
+              states.contains(WidgetState.selected) ? Colors.white : ink,
+        ),
+      ),
+    ),
     dividerTheme: const DividerThemeData(color: outline, thickness: 1),
     checkboxTheme: CheckboxThemeData(
-        side: WidgetStateBorderSide.resolveWith((states) => BorderSide(
-            color:
-                states.contains(WidgetState.selected) ? ink : controlOutline))),
+      side: WidgetStateBorderSide.resolveWith(
+        (states) => BorderSide(
+          color: states.contains(WidgetState.selected) ? ink : controlOutline,
+        ),
+      ),
+    ),
     textSelectionTheme: const TextSelectionThemeData(
-        cursorColor: ink,
-        selectionColor: Color(0xffeeeeee),
-        selectionHandleColor: ink),
+      cursorColor: ink,
+      selectionColor: Color(0xffeeeeee),
+      selectionHandleColor: ink,
+    ),
   );
   return theme.copyWith(
-      textTheme: theme.textTheme
-          .copyWith(
-            headlineSmall: const TextStyle(
-                fontSize: 20,
-                height: 1.3,
-                fontWeight: FontWeight.w700,
-                color: ink),
-            titleLarge: const TextStyle(
-                fontSize: 20,
-                height: 1.3,
-                fontWeight: FontWeight.w700,
-                color: ink),
-            titleMedium: const TextStyle(
-                fontSize: 16,
-                height: 1.4,
-                fontWeight: FontWeight.w700,
-                color: ink),
-            bodyLarge: const TextStyle(
-                fontSize: 16,
-                height: 1.5,
-                fontWeight: FontWeight.w500,
-                color: ink),
-            bodyMedium: const TextStyle(
-                fontSize: 14,
-                height: 1.5,
-                fontWeight: FontWeight.w500,
-                color: ink),
-            bodySmall: const TextStyle(
-                fontSize: 12,
-                height: 1.5,
-                fontWeight: FontWeight.w500,
-                color: Color(0xff4b4b4b)),
-            labelLarge: const TextStyle(
-                fontSize: 14, fontWeight: FontWeight.w500, color: ink),
-            labelMedium: const TextStyle(
-                fontSize: 12, fontWeight: FontWeight.w500, color: ink),
-            titleSmall: const TextStyle(
-                fontSize: 14, fontWeight: FontWeight.w500, color: ink),
-          )
-          .apply(fontFamily: 'Poppins'));
+    textTheme: theme.textTheme
+        .copyWith(
+          headlineSmall: const TextStyle(
+            fontSize: 20,
+            height: 1.3,
+            fontWeight: FontWeight.w700,
+            color: ink,
+          ),
+          titleLarge: const TextStyle(
+            fontSize: 20,
+            height: 1.3,
+            fontWeight: FontWeight.w700,
+            color: ink,
+          ),
+          titleMedium: const TextStyle(
+            fontSize: 16,
+            height: 1.4,
+            fontWeight: FontWeight.w700,
+            color: ink,
+          ),
+          bodyLarge: const TextStyle(
+            fontSize: 16,
+            height: 1.5,
+            fontWeight: FontWeight.w500,
+            color: ink,
+          ),
+          bodyMedium: const TextStyle(
+            fontSize: 14,
+            height: 1.5,
+            fontWeight: FontWeight.w500,
+            color: ink,
+          ),
+          bodySmall: const TextStyle(
+            fontSize: 12,
+            height: 1.5,
+            fontWeight: FontWeight.w500,
+            color: Color(0xff4b4b4b),
+          ),
+          labelLarge: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: ink,
+          ),
+          labelMedium: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: ink,
+          ),
+          titleSmall: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: ink,
+          ),
+        )
+        .apply(fontFamily: 'Poppins'),
+  );
 }

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:apoio_app/ui/core/theme/interaction_colors.dart';
+import 'package:apoio_app/ui/core/theme/floating_navigation_style.dart';
 
 class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
+  static const actionGap = 16.0;
   final String? sectionTitle;
+  final bool showManagement;
   final VoidCallback? onManagement;
   final VoidCallback? onBack;
   final bool navigationEnabled;
@@ -14,6 +16,7 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
   const AppTopBar({
     super.key,
     this.sectionTitle,
+    this.showManagement = true,
     this.onManagement,
     this.onBack,
     this.navigationEnabled = true,
@@ -24,8 +27,7 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
   });
 
   @override
-  Size get preferredSize =>
-      Size.fromHeight(76 + (sectionTitle == null ? 0 : 28));
+  Size get preferredSize => const Size.fromHeight(76);
 
   @override
   Widget build(BuildContext context) {
@@ -45,26 +47,15 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
           const SizedBox(width: 8),
         ],
         Text(
-          'Plataforma de apoio',
+          sectionTitle ?? 'Plataforma de apoio',
           style: Theme.of(
             context,
           ).textTheme.labelLarge!.copyWith(fontWeight: FontWeight.w700),
         ),
       ],
     );
-    ButtonStyle circleStyle({bool active = false}) => IconButton.styleFrom(
-      fixedSize: const Size.square(48),
-      minimumSize: const Size.square(48),
-      foregroundColor: active ? colors.onPrimary : colors.onSurface,
-      disabledForegroundColor: active ? colors.onPrimary : colors.outline,
-      backgroundColor: active ? colors.primary : colors.surface,
-      disabledBackgroundColor: active ? colors.primary : null,
-      elevation: 3,
-      shadowColor: Colors.black26,
-      shape: CircleBorder(
-        side: BorderSide(color: active ? colors.primary : colors.outline),
-      ),
-    ).copyWith(overlayColor: InteractionColors.overlay(dark: active));
+    ButtonStyle circleStyle({bool active = false}) =>
+        floatingNavigationStyle(context, active: active, circular: true);
 
     return DecoratedBox(
       decoration: const BoxDecoration(
@@ -127,32 +118,26 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      IconButton(
-                        tooltip: 'Gestão',
-                        icon: const Icon(Icons.apartment_rounded, size: 20),
-                        style: circleStyle(active: managementActive),
-                        onPressed: navigationEnabled && !managementActive
-                            ? onManagement
-                            : null,
-                      ),
+                      if (showManagement)
+                        IconButton(
+                          tooltip: 'Gestão',
+                          icon: const Icon(Icons.apartment_rounded, size: 20),
+                          style: circleStyle(active: managementActive),
+                          onPressed: navigationEnabled && !managementActive
+                              ? onManagement
+                              : null,
+                        ),
                       if (action != null) ...[
                         const SizedBox(width: 8),
-                        SizedBox(height: 48, child: action!),
+                        TextButtonTheme(
+                          data: TextButtonThemeData(
+                            style: floatingNavigationStyle(context),
+                          ),
+                          child: SizedBox(height: 48, child: action!),
+                        ),
                       ],
                     ],
                   ),
-                  if (sectionTitle != null) ...[
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      height: 20,
-                      child: Text(
-                        sectionTitle!,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ),
-                  ],
                 ],
               ),
             ),
