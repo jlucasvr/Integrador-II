@@ -10,8 +10,8 @@ class CategoryPicker extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Wrap(
     alignment: WrapAlignment.center,
-    spacing: 8,
-    runSpacing: 8,
+    spacing: 12,
+    runSpacing: 12,
     children:
         [
               'Água',
@@ -29,8 +29,15 @@ class CategoryPicker extends StatelessWidget {
               (category) => OutlinedButton.icon(
                 icon: Icon(resourceIcon(category), size: 15),
                 style: OutlinedButton.styleFrom(
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  visualDensity: VisualDensity.standard,
                   minimumSize: const Size(0, 32),
-                  fixedSize: const Size.fromHeight(32),
+                  fixedSize: Size.fromHeight(
+                    (MediaQuery.textScalerOf(context).scale(18) + 14).clamp(
+                      32,
+                      double.infinity,
+                    ),
+                  ),
                   backgroundColor: selected == category
                       ? Theme.of(context).colorScheme.surfaceContainerHighest
                       : null,

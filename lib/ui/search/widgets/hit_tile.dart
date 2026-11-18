@@ -203,7 +203,7 @@ class _ResultResourceRow extends StatelessWidget {
         ? const Color(0xff23804b)
         : const Color(0xffb23b31);
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

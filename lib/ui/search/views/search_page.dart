@@ -146,6 +146,7 @@ class _SearchPageState extends State<SearchPage> {
         if (!didPop && !busy) _back();
       },
       child: Scaffold(
+        extendBody: true,
         extendBodyBehindAppBar: true,
         resizeToAvoidBottomInset: false,
         bottomNavigationBar: _step >= 1
@@ -177,15 +178,20 @@ class _SearchPageState extends State<SearchPage> {
         body: LayoutBuilder(
           builder: (context, constraints) => SingleChildScrollView(
             controller: _scroll,
-            padding: EdgeInsets.only(top: headerInset),
+            padding: EdgeInsets.only(
+              top: headerInset,
+              bottom: MediaQuery.paddingOf(context).bottom,
+            ),
             child: PageBody(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
               child: ConstrainedBox(
                 constraints: BoxConstraints(
-                  minHeight: (constraints.maxHeight - headerInset - 20).clamp(
-                    0,
-                    double.infinity,
-                  ),
+                  minHeight:
+                      (constraints.maxHeight -
+                              headerInset -
+                              20 -
+                              MediaQuery.paddingOf(context).bottom)
+                          .clamp(0, double.infinity),
                 ),
                 child: StepLayout(
                   centerContent: _step < 3,
@@ -235,7 +241,12 @@ class _SearchPageState extends State<SearchPage> {
                   ),
                   content: Padding(
                     padding: const EdgeInsets.only(bottom: 32),
-                    child: _stepContent(context),
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 580),
+                        child: _stepContent(context),
+                      ),
+                    ),
                   ),
                 ),
               ),

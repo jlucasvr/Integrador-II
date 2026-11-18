@@ -1,5 +1,6 @@
 import 'package:apoio_app/ui/core/widgets/action_glow.dart';
 import 'package:apoio_app/ui/core/widgets/app_top_bar.dart';
+import 'package:apoio_app/ui/core/widgets/navigation_surface.dart';
 import 'package:apoio_app/ui/search/view_models/location_view_model.dart';
 import 'package:apoio_app/ui/search/widgets/location_pill.dart';
 import 'package:flutter/material.dart';
@@ -21,6 +22,7 @@ class SearchDock extends StatelessWidget {
   final String actionLabel;
   final ValueChanged<String>? onChanged;
   final Key? locationKey;
+  final double maxWidth;
 
   const SearchDock({
     super.key,
@@ -37,6 +39,7 @@ class SearchDock extends StatelessWidget {
     this.actionLabel = 'Buscar pontos de atendimento',
     this.onChanged,
     this.locationKey,
+    this.maxWidth = 620,
   });
 
   @override
@@ -44,28 +47,17 @@ class SearchDock extends StatelessWidget {
     final coordinates = location.coordinates;
     final colors = Theme.of(context).colorScheme;
     final locate = onLocate;
-    final opaque =
-        location.error != null || MediaQuery.sizeOf(context).width < 360;
 
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
-      child: DecoratedBox(
-        decoration: opaque
-            ? BoxDecoration(color: colors.surface)
-            : const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Color(0x00ffffff), Color(0xf2ffffff), Colors.white],
-                  stops: [0, 0.45, 1],
-                ),
-              ),
+      child: NavigationSurface(
+        bottom: true,
         child: SafeArea(
           top: false,
           child: Align(
             heightFactor: 1,
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 620),
+              constraints: BoxConstraints(maxWidth: maxWidth),
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
                 child: Column(

@@ -1,5 +1,6 @@
 import 'package:apoio_app/ui/search/widgets/category_picker.dart';
 import 'package:apoio_app/ui/core/widgets/action_glow.dart';
+import 'package:apoio_app/ui/core/widgets/navigation_surface.dart';
 import 'dart:async';
 import 'package:apoio_app/app/app.dart';
 import 'package:apoio_app/core/errors/location_failure.dart';
@@ -56,6 +57,25 @@ void main() {
       Icons.arrow_forward_rounded,
     );
     expect(find.byType(LocationPill), findsNothing);
+    expect(tester.widget<Scaffold>(find.byType(Scaffold)).extendBody, isTrue);
+    final dockSurface = find.byWidgetPredicate(
+      (widget) => widget is NavigationSurface && widget.bottom,
+    );
+    final searchOnlyHeight = tester.getSize(dockSurface).height;
+    for (final element in find.byType(NavigationSurface).evaluate()) {
+      final decoration = find
+          .descendant(
+            of: find.byWidget(element.widget),
+            matching: find.byType(DecoratedBox),
+          )
+          .first;
+      final gradient =
+          (tester.widget<DecoratedBox>(decoration).decoration as BoxDecoration)
+                  .gradient!
+              as LinearGradient;
+      expect(gradient.colors.length, 2);
+      expect(gradient.stops, isNull);
+    }
     expect(find.text('Continuar'), findsNothing);
     await tapSearchControl(tester, find.text('Água'));
     expect(tester.widget<IconButton>(submit).onPressed, isNotNull);
@@ -70,6 +90,10 @@ void main() {
     expect(find.byKey(const ValueKey('wizard-next')), findsNothing);
     await tapSearchControl(tester, submit);
     expect(find.text('Onde buscar?'), findsOneWidget);
+    expect(
+      tester.getSize(dockSurface).height - searchOnlyHeight,
+      closeTo(60, .1),
+    );
     final locationGap =
         tester.getRect(find.byKey(const ValueKey('search-term'))).top -
         tester.getRect(find.byKey(const ValueKey('location-control'))).bottom;

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:apoio_app/ui/core/theme/floating_navigation_style.dart';
+import 'package:apoio_app/ui/core/layout/public_layout.dart';
+import 'navigation_surface.dart';
 
 class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
   static const actionGap = 16.0;
@@ -11,7 +13,7 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
   final bool managementActive;
   final bool showLogo;
   final Widget? action;
-  final double maxWidth;
+  final double? maxWidth;
 
   const AppTopBar({
     super.key,
@@ -22,7 +24,7 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
     this.navigationEnabled = true,
     this.managementActive = false,
     this.showLogo = false,
-    this.maxWidth = 620,
+    this.maxWidth,
     this.action,
   });
 
@@ -57,21 +59,15 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
     ButtonStyle circleStyle({bool active = false}) =>
         floatingNavigationStyle(context, active: active, circular: true);
 
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Colors.white, Color(0xf2ffffff), Color(0x00ffffff)],
-          stops: [0, .55, 1],
-        ),
-      ),
+    return NavigationSurface(
       child: SafeArea(
         bottom: false,
         child: Align(
           alignment: Alignment.topCenter,
           child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: maxWidth),
+            constraints: BoxConstraints(
+              maxWidth: maxWidth ?? PublicLayout.pageWidth(context),
+            ),
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
               child: Column(
