@@ -8,34 +8,38 @@ class HomeSearchOptions extends StatelessWidget {
   final ValueChanged<SearchIntent> onIntentChanged;
   final ValueChanged<String> onCategorySelected;
 
-  const HomeSearchOptions(
-      {super.key,
-      required this.intent,
-      required this.onIntentChanged,
-      required this.onCategorySelected});
+  const HomeSearchOptions({
+    super.key,
+    required this.intent,
+    required this.onIntentChanged,
+    required this.onCategorySelected,
+  });
 
   @override
   Widget build(BuildContext context) => Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IntentSelector(intent: intent, onChanged: onIntentChanged),
-            const SizedBox(height: 8),
-            Text('Você pode consultar ajuda e doações sem criar uma conta.',
-                textAlign: TextAlign.center,
-                style: Theme.of(context)
-                    .textTheme
-                    .bodySmall!
-                    .copyWith(fontSize: 11, height: 1.4)),
-            const SizedBox(height: 28),
-            Text('Categorias',
-                textAlign: TextAlign.center,
-                style: Theme.of(context)
-                    .textTheme
-                    .titleSmall!
-                    .copyWith(fontWeight: FontWeight.w700)),
-            const SizedBox(height: 10),
-            CategoryPicker(onSelected: onCategorySelected),
-            const SizedBox(height: 16),
-          ]);
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      IntentSelector(intent: intent, onChanged: onIntentChanged),
+      const SizedBox(height: 8),
+      Text(
+        'Você pode consultar ajuda e doações sem criar uma conta.',
+        textAlign: TextAlign.center,
+        style: Theme.of(
+          context,
+        ).textTheme.bodySmall!.copyWith(fontSize: 11, height: 1.4),
+      ),
+      const SizedBox(height: 28),
+      Text(
+        'Categorias',
+        textAlign: TextAlign.center,
+        style: Theme.of(
+          context,
+        ).textTheme.titleSmall!.copyWith(fontWeight: FontWeight.w700),
+      ),
+      const SizedBox(height: 10),
+      CategoryPicker(onSelected: onCategorySelected),
+      const SizedBox(height: 16),
+    ],
+  );
 }

@@ -6,8 +6,11 @@ class IntentSelector extends StatelessWidget {
   final SearchIntent intent;
   final ValueChanged<SearchIntent> onChanged;
 
-  const IntentSelector(
-      {super.key, required this.intent, required this.onChanged});
+  const IntentSelector({
+    super.key,
+    required this.intent,
+    required this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -28,26 +31,35 @@ class IntentSelector extends StatelessWidget {
                 selected: selected,
                 child: TextButton(
                   onPressed: () => onChanged(value),
-                  style: TextButton.styleFrom(
-                    backgroundColor: selected ? colors.primary : colors.surface,
-                    foregroundColor:
-                        selected ? colors.onPrimary : colors.primary,
-                    shape: const StadiumBorder(),
-                    side: BorderSide.none,
-                    minimumSize: const Size(0, 48),
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    textStyle: Theme.of(context).textTheme.labelLarge!.copyWith(
-                        fontSize: 14,
-                        height: 20 / 14,
-                        fontWeight: FontWeight.w700),
-                  ).copyWith(
-                      // Apply the new selection without a lingering transition.
-                      animationDuration: Duration.zero,
-                      overlayColor: InteractionColors.overlay(dark: selected)),
-                  child: Text(value == SearchIntent.help
-                      ? 'Preciso de ajuda'
-                      : 'Quero doar'),
+                  style:
+                      TextButton.styleFrom(
+                        backgroundColor: selected
+                            ? colors.primary
+                            : colors.surface,
+                        foregroundColor: selected
+                            ? colors.onPrimary
+                            : colors.primary,
+                        shape: const StadiumBorder(),
+                        side: BorderSide.none,
+                        minimumSize: const Size(0, 48),
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        textStyle: Theme.of(context).textTheme.labelLarge!
+                            .copyWith(
+                              fontSize: 14,
+                              height: 20 / 14,
+                              fontWeight: FontWeight.w700,
+                            ),
+                      ).copyWith(
+                        // Apply the new selection without a lingering transition.
+                        animationDuration: Duration.zero,
+                        overlayColor: InteractionColors.overlay(dark: selected),
+                      ),
+                  child: Text(
+                    value == SearchIntent.help
+                        ? 'Preciso de ajuda'
+                        : 'Quero doar',
+                  ),
                 ),
               ),
             );
