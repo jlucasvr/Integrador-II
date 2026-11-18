@@ -23,62 +23,96 @@ void main() {
         'available': true,
         'acceptsDonation': true,
         'publicQuantity': null,
-        'updatedAt': '2026-10-14T13:00:00Z'
+        'updatedAt': '2026-10-14T13:00:00Z',
       };
       return http.Response(
-          jsonEncode({
-            'data': [
-              {
-                'point': {
-                  'id': 'norte',
-                  'name': 'Ponto Norte',
-                  'institution': 'Instituição',
-                  'address': 'Rua Exemplo',
-                  'hours': '8h às 17h',
-                  'updatedAt': '2026-10-14T13:00:00Z',
-                  'distanceKm': null,
-                  'resources': [r]
-                },
-                'resource': r,
-                'alternative': false
-              }
-            ]
-          }),
-          200,
-          headers: {'content-type': 'application/json; charset=utf-8'});
+        jsonEncode({
+          'data': [
+            {
+              'point': {
+                'id': 'norte',
+                'name': 'Ponto Norte',
+                'institution': 'Instituição',
+                'address': 'Rua Exemplo',
+                'hours': '8h às 17h',
+                'updatedAt': '2026-10-14T13:00:00Z',
+                'distanceKm': null,
+                'latitude': -23.54,
+                'longitude': -46.62,
+                'resources': [r],
+              },
+              'resource': r,
+              'alternative': false,
+            },
+          ],
+        }),
+        200,
+        headers: {'content-type': 'application/json; charset=utf-8'},
+      );
     });
     final hits =
-        await ApiPointRepository('http://localhost:3000/api/v1', client: client)
-            .search(const SearchQuery('Água', SearchIntent.donate,
-                coordinates: GeoCoordinates(-23.55, -46.63)));
+        await ApiPointRepository(
+          'http://localhost:3000/api/v1',
+          client: client,
+        ).search(
+          const SearchQuery(
+            'Água',
+            SearchIntent.donate,
+            coordinates: GeoCoordinates(-23.55, -46.63),
+          ),
+        );
     expect(hits.single.resource.publicQuantity, isNull);
     expect(hits.single.point.distanceKm, isNull);
+    expect(hits.single.point.coordinates!.latitude, -23.54);
+    expect(hits.single.point.coordinates!.longitude, -46.62);
     expect(hits.single.resource.name, 'Água potável');
   });
   test('falha HTTP é propagada para a tela de tentativa novamente', () async {
-    final repository = ApiPointRepository('http://localhost:3000/api/v1',
-        client: MockClient((_) async => http.Response('{}', 503)));
+    final repository = ApiPointRepository(
+      'http://localhost:3000/api/v1',
+      client: MockClient((_) async => http.Response('{}', 503)),
+    );
     await expectLater(
-        repository.search(const SearchQuery('Água', SearchIntent.help,
-            coordinates: GeoCoordinates(-23.55, -46.63))),
-        throwsException);
+      repository.search(
+        const SearchQuery(
+          'Água',
+          SearchIntent.help,
+          coordinates: GeoCoordinates(-23.55, -46.63),
+        ),
+      ),
+      throwsException,
+    );
   });
   test('envia os filtros aplicáveis junto à consulta', () async {
     final queries = <Map<String, String>>[];
-    final repository = ApiPointRepository('http://localhost:3000/api/v1',
-        client: MockClient((request) async {
-      queries.add(request.url.queryParameters);
-      return http.Response('{"data":[]}', 200);
-    }));
+    final repository = ApiPointRepository(
+      'http://localhost:3000/api/v1',
+      client: MockClient((request) async {
+        queries.add(request.url.queryParameters);
+        return http.Response('{"data":[]}', 200);
+      }),
+    );
     addTearDown(repository.dispose);
-    await repository.search(const SearchQuery('Água', SearchIntent.help,
+    await repository.search(
+      const SearchQuery(
+        'Água',
+        SearchIntent.help,
         coordinates: GeoCoordinates(-23.55, -46.63),
         radiusKm: 2,
-        availableOnly: true));
-    await repository.search(const SearchQuery('Água', SearchIntent.help,
-        radiusKm: 2, availableOnly: true));
+        availableOnly: true,
+      ),
+    );
     await repository.search(
-        const SearchQuery('Água', SearchIntent.donate, availableOnly: true));
+      const SearchQuery(
+        'Água',
+        SearchIntent.help,
+        radiusKm: 2,
+        availableOnly: true,
+      ),
+    );
+    await repository.search(
+      const SearchQuery('Água', SearchIntent.donate, availableOnly: true),
+    );
     expect(queries, [
       {
         'q': 'Água',
@@ -86,7 +120,7 @@ void main() {
         'lat': '-23.55',
         'lon': '-46.63',
         'radiusKm': '2.0',
-        'availableOnly': 'true'
+        'availableOnly': 'true',
       },
       {'q': 'Água', 'intent': 'help', 'availableOnly': 'true'},
       {'q': 'Água', 'intent': 'donate'},

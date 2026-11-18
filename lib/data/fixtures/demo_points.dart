@@ -1,9 +1,11 @@
 import 'package:apoio_app/data/models/resource.dart';
+import 'package:apoio_app/data/models/geo_coordinates.dart';
 import 'package:apoio_app/data/models/support_point.dart';
 
 const demoPoints = [
   SupportPoint(
       id: 'central',
+      coordinates: GeoCoordinates(-23.55, -46.63),
       name: 'Centro de Apoio Central',
       institution: 'Instituição Solidariedade',
       address: 'Rua Exemplo, 100 · Centro',
@@ -20,6 +22,7 @@ const demoPoints = [
       ]),
   SupportPoint(
       id: 'norte',
+      coordinates: GeoCoordinates(-23.54, -46.62),
       name: 'Ponto Comunitário Norte',
       institution: 'Associação Bairro Unido',
       address: 'Avenida Modelo, 250 · Bairro Norte',
@@ -35,6 +38,7 @@ const demoPoints = [
       ]),
   SupportPoint(
       id: 'sul',
+      coordinates: GeoCoordinates(-23.53, -46.61),
       name: 'Escola de Apoio Sul',
       institution: 'Rede de Apoio Municipal',
       address: 'Rua Ilustrativa, 40 · Bairro Sul',
