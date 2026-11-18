@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:apoio_app/app/navigation.dart';
 import 'package:apoio_app/data/models/search_intent.dart';
 import 'package:apoio_app/data/models/search_query.dart';
@@ -36,6 +37,7 @@ class _SearchPageState extends State<SearchPage> {
   SearchIntent _intent = SearchIntent.help;
   SearchQuery? _lastQuery;
   int _step = 0;
+  int _stepVersion = 0;
 
   @override
   void initState() {
@@ -52,7 +54,23 @@ class _SearchPageState extends State<SearchPage> {
   void _go(int step) {
     FocusScope.of(context).unfocus();
     setState(() => _step = step);
+    _stepVersion++;
     if (_scroll.hasClients) _scroll.jumpTo(0);
+    if (step == 2) unawaited(_captureAuthorizedLocation(_stepVersion));
+  }
+
+  Future<void> _captureAuthorizedLocation(int stepVersion) async {
+    if (_location.coordinates != null || _location.busy) return;
+    final granted = await widget.locationService.hasPermission();
+    if (!mounted ||
+        _step != 2 ||
+        _stepVersion != stepVersion ||
+        !granted ||
+        _location.busy ||
+        _location.coordinates != null) {
+      return;
+    }
+    await _location.capture();
   }
 
   void _back() {

@@ -9,9 +9,16 @@ class FakeLocationService implements LocationService {
   LocationFailure? failure;
   int calls = 0;
   Completer<GeoCoordinates>? pending;
+  bool permissionGranted = false;
+  Completer<bool>? permissionPending;
 
-  FakeLocationService(
-      {this.coordinates = const GeoCoordinates(-23.55, -46.63)});
+  FakeLocationService({
+    this.coordinates = const GeoCoordinates(-23.55, -46.63),
+  });
+
+  @override
+  Future<bool> hasPermission() async =>
+      permissionPending?.future ?? permissionGranted;
 
   @override
   Future<GeoCoordinates> current() async {

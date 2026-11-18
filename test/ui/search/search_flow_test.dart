@@ -37,6 +37,75 @@ void main() {
     );
     addTearDown(dispatcher.clearAccessibilityFeaturesTestValue);
   });
+  for (final granted in [true, false]) {
+    testWidgets('captura ao entrar na localização só com permissão: $granted', (
+      tester,
+    ) async {
+      final location = FakeLocationService()..permissionGranted = granted;
+      await tester.pumpWidget(
+        ApoioApp(
+          repository: RecordingPointRepository(),
+          locationService: location,
+        ),
+      );
+      expect(location.calls, 0);
+      await tapSearchControl(tester, find.text('Preciso de ajuda'));
+      expect(location.calls, 0);
+      await chooseSearchItem(tester);
+      expect(find.text('Onde buscar?'), findsOneWidget);
+      expect(location.calls, granted ? 1 : 0);
+      expect(
+        tester
+            .widget<IconButton>(find.byKey(const ValueKey('search-submit')))
+            .onPressed,
+        granted ? isNotNull : isNull,
+      );
+    });
+  }
+  testWidgets('permissão tardia não captura depois de sair da etapa', (
+    tester,
+  ) async {
+    final permission = Completer<bool>();
+    final location = FakeLocationService()..permissionPending = permission;
+    await tester.pumpWidget(
+      ApoioApp(
+        repository: RecordingPointRepository(),
+        locationService: location,
+      ),
+    );
+    await chooseSearchItem(tester);
+    await tapSearchControl(tester, find.byTooltip('Voltar'));
+    permission.complete(true);
+    await tester.pumpAndSettle();
+    expect(find.text('O que você procura?'), findsOneWidget);
+    expect(location.calls, 0);
+    expect(tester.takeException(), isNull);
+  });
+  testWidgets('falha na captura automática permite tentar pelo botão', (
+    tester,
+  ) async {
+    final location = FakeLocationService()
+      ..permissionGranted = true
+      ..failure = const LocationFailure('Ative a localização do dispositivo.');
+    await tester.pumpWidget(
+      ApoioApp(
+        repository: RecordingPointRepository(),
+        locationService: location,
+      ),
+    );
+    await chooseSearchItem(tester);
+    expect(location.calls, 1);
+    expect(find.text('Ative a localização do dispositivo.'), findsOneWidget);
+    location.failure = null;
+    await tapSearchControl(tester, find.byKey(const ValueKey('wizard-locate')));
+    expect(location.calls, 2);
+    expect(
+      tester
+          .widget<IconButton>(find.byKey(const ValueKey('search-submit')))
+          .onPressed,
+      isNotNull,
+    );
+  });
   testWidgets('barra guia as etapas e glow termina após capturar localização', (
     tester,
   ) async {
