@@ -294,10 +294,12 @@ class _SearchPageState extends State<SearchPage> {
             size: 56,
           ),
         if (_step == 3) ...[
-          OutlinedButton.icon(
-            onPressed: () => _go(0),
-            icon: const Icon(Icons.route_outlined),
-            label: const Text('Voltar ao passo a passo'),
+          Center(
+            child: OutlinedButton.icon(
+              onPressed: () => _go(0),
+              icon: const Icon(Icons.restart_alt_rounded),
+              label: const Text('Voltar ao passo a passo'),
+            ),
           ),
           if (_lastQuery?.availableOnly == true &&
               _intent == SearchIntent.help) ...[

@@ -62,6 +62,11 @@ void main() {
       (widget) => widget is NavigationSurface && widget.bottom,
     );
     final searchOnlyHeight = tester.getSize(dockSurface).height;
+    expect(
+      tester.getRect(find.byKey(const ValueKey('search-term'))).top -
+          tester.getRect(dockSurface).top,
+      closeTo(16, .1),
+    );
     for (final element in find.byType(NavigationSurface).evaluate()) {
       final decoration = find
           .descendant(
@@ -92,12 +97,24 @@ void main() {
     expect(find.text('Onde buscar?'), findsOneWidget);
     expect(
       tester.getSize(dockSurface).height - searchOnlyHeight,
-      closeTo(60, .1),
+      closeTo(0, .1),
     );
     final locationGap =
         tester.getRect(find.byKey(const ValueKey('search-term'))).top -
         tester.getRect(find.byKey(const ValueKey('location-control'))).bottom;
     expect(locationGap, closeTo(16, .1));
+    expect(
+      tester.getRect(find.byKey(const ValueKey('search-term'))).top -
+          tester.getRect(dockSurface).top,
+      closeTo(16, .1),
+    );
+    expect(
+      tester.getRect(dockSurface).top,
+      closeTo(tester.getRect(find.byType(LocationPill)).bottom, .1),
+    );
+    final searchBoundsBeforeLocation = tester.getRect(
+      find.byKey(const ValueKey('search-term')),
+    );
     expect(
       tester
           .widget<Icon>(find.byKey(const ValueKey('location-step-symbol')))
@@ -113,6 +130,16 @@ void main() {
     expect(find.byKey(const ValueKey('wizard-results')), findsNothing);
     expect(tester.widget<IconButton>(submit).onPressed, isNull);
     await tapSearchControl(tester, find.byKey(const ValueKey('wizard-locate')));
+    final coordinates = find.byKey(const ValueKey('search-coordinates'));
+    expect(
+      tester.getRect(coordinates).top,
+      greaterThan(searchBoundsBeforeLocation.bottom),
+    );
+    expect(
+      tester.getRect(find.byKey(const ValueKey('search-term'))),
+      searchBoundsBeforeLocation,
+    );
+    expect(tester.widget<Text>(coordinates).style!.fontSize, 11);
     expect(tester.widget<ActionGlow>(glow).active, isFalse);
     expect(find.byKey(const ValueKey('wizard-results')), findsNothing);
     expect(

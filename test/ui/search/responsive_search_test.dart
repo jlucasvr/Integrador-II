@@ -7,6 +7,14 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../fixtures/location_service_fixture.dart';
 
 void main() {
+  void expectSearchButtonInsets(WidgetTester tester) {
+    final field = tester.getRect(find.byKey(const ValueKey('search-term')));
+    final button = tester.getRect(find.byKey(const ValueKey('search-submit')));
+    expect(button.size, const Size(48, 48));
+    expect(button.top - field.top, closeTo(field.bottom - button.bottom, 1));
+    expect(button.top - field.top, closeTo(field.right - button.right, 1));
+  }
+
   setUp(() {
     final dispatcher =
         TestWidgetsFlutterBinding.ensureInitialized().platformDispatcher;
@@ -37,6 +45,7 @@ void main() {
       await tapSearchControl(tester, find.text('Preciso de ajuda'));
       await tapSearchControl(tester, find.text('Medicamentos'));
       final field = find.byKey(const ValueKey('search-term'));
+      expectSearchButtonInsets(tester);
       expect(
         tester.widget<TextFormField>(field).controller!.text,
         'Medicamentos',
@@ -56,6 +65,7 @@ void main() {
       );
       expect(tester.takeException(), isNull);
       final filter = find.text('Filtros');
+      expectSearchButtonInsets(tester);
       expect(
         tester.getRect(find.text('3 resultados para')).top,
         closeTo(tester.getRect(find.byType(FilterPill)).top, .1),
