@@ -31,19 +31,25 @@ class ResultsViewModel extends ChangeNotifier {
   }
 
   void search(String term, {GeoCoordinates? coordinates}) {
-    _query = SearchQuery(term, query.intent,
-        coordinates: coordinates ?? query.coordinates,
-        radiusKm: query.radiusKm,
-        availableOnly: query.availableOnly);
+    _query = SearchQuery(
+      term,
+      query.intent,
+      coordinates: coordinates ?? query.coordinates,
+      radiusKm: query.radiusKm,
+      availableOnly: query.availableOnly,
+    );
     reload();
   }
 
   void setRadius(double? value) {
     if (!canFilterByDistance || value == query.radiusKm) return;
-    _query = SearchQuery(query.term, query.intent,
-        coordinates: query.coordinates,
-        radiusKm: value,
-        availableOnly: query.availableOnly);
+    _query = SearchQuery(
+      query.term,
+      query.intent,
+      coordinates: query.coordinates,
+      radiusKm: value,
+      availableOnly: query.availableOnly,
+    );
     reload();
   }
 
@@ -51,10 +57,29 @@ class ResultsViewModel extends ChangeNotifier {
     if (query.intent != SearchIntent.help || value == query.availableOnly) {
       return;
     }
-    _query = SearchQuery(query.term, query.intent,
-        coordinates: query.coordinates,
-        radiusKm: query.radiusKm,
-        availableOnly: value);
+    _query = SearchQuery(
+      query.term,
+      query.intent,
+      coordinates: query.coordinates,
+      radiusKm: query.radiusKm,
+      availableOnly: value,
+    );
+    reload();
+  }
+
+  void applyFilters({double? radius, required bool availableOnly}) {
+    final nextRadius = canFilterByDistance ? radius : null;
+    final nextAvailable = query.intent == SearchIntent.help && availableOnly;
+    if (nextRadius == query.radiusKm && nextAvailable == query.availableOnly) {
+      return;
+    }
+    _query = SearchQuery(
+      query.term,
+      query.intent,
+      coordinates: query.coordinates,
+      radiusKm: nextRadius,
+      availableOnly: nextAvailable,
+    );
     reload();
   }
 }
