@@ -80,8 +80,10 @@ class _DetailPageState extends State<DetailPage> {
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
       _identity(context),
-      const SizedBox(height: 24),
-      _actions(context),
+      if (!PublicLayout.isDesktop(context)) ...[
+        const SizedBox(height: 24),
+        _actions(context),
+      ],
       const SizedBox(height: 24),
       _hours(context),
       const SizedBox(height: 32),
@@ -96,38 +98,33 @@ class _DetailPageState extends State<DetailPage> {
   Widget _desktopBody(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
       final sidebarWidth = (constraints.maxWidth * .36).clamp(340.0, 400.0);
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      return Row(
+        key: const ValueKey('organization-columns'),
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(child: _identity(context)),
-              const SizedBox(width: 32),
-              SizedBox(width: sidebarWidth, child: _actions(context)),
-            ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _identity(context),
+                const SizedBox(height: 32),
+                _items(context),
+              ],
+            ),
           ),
-          const SizedBox(height: 32),
-          Row(
-            key: const ValueKey('organization-columns'),
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(child: _items(context)),
-              const SizedBox(width: 32),
-              SizedBox(
-                width: sidebarWidth,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _location(context),
-                    _hours(context),
-                    const SizedBox(height: 20),
-                    _contact(context),
-                    const SizedBox(height: 24),
-                  ],
-                ),
-              ),
-            ],
+          const SizedBox(width: 32),
+          SizedBox(
+            width: sidebarWidth,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _hours(context),
+                const SizedBox(height: 20),
+                _contact(context),
+                const SizedBox(height: 24),
+                _location(context),
+              ],
+            ),
           ),
         ],
       );
@@ -200,6 +197,7 @@ class _DetailPageState extends State<DetailPage> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Wrap(
+          alignment: WrapAlignment.center,
           spacing: 8,
           runSpacing: 8,
           children: [
@@ -348,19 +346,19 @@ class _DetailPageState extends State<DetailPage> {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.info_outline_rounded, size: 22),
+                  const Icon(Icons.chat_bubble_outline_rounded, size: 22),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Confirme antes de ir',
+                          'Entre em contato',
                           style: theme.textTheme.titleMedium,
                         ),
                         const SizedBox(height: 4),
                         const Text(
-                          'Os itens podem acabar. Fale com a organização para confirmar o atendimento.',
+                          'Consulte a disponibilidade dos itens, tire dúvidas ou combine sua doação.',
                         ),
                       ],
                     ),

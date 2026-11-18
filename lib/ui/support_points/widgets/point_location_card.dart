@@ -26,6 +26,11 @@ class _PointLocationCardState extends State<PointLocationCard> {
   int _attempt = 0;
   Future<vt.Style>? _style;
 
+  void _centerMap(LatLng point) {
+    // Keep the pin's tip anchored to the coordinates while centering its body.
+    _controller.move(point, 15, offset: const Offset(0, 26));
+  }
+
   @override
   void initState() {
     super.initState();
@@ -109,6 +114,7 @@ class _PointLocationCardState extends State<PointLocationCard> {
                           backgroundColor: Colors.white,
                           initialCenter: center,
                           initialZoom: 15,
+                          onMapReady: () => _centerMap(center),
                           minZoom: 3,
                           maxZoom: 18,
                           interactionOptions: const InteractionOptions(
@@ -151,7 +157,7 @@ class _PointLocationCardState extends State<PointLocationCard> {
                               Marker(
                                 point: center,
                                 width: 52,
-                                height: 60,
+                                height: 52,
                                 alignment: Alignment.topCenter,
                                 child: Tooltip(
                                   message: point.name,
@@ -222,7 +228,7 @@ class _PointLocationCardState extends State<PointLocationCard> {
                             _mapButton(
                               Icons.my_location,
                               'Centralizar organização',
-                              () => _controller.move(center, 15),
+                              () => _centerMap(center),
                             ),
                           ],
                         ),
@@ -231,23 +237,32 @@ class _PointLocationCardState extends State<PointLocationCard> {
                       bottom: 0,
                       left: 0,
                       right: 0,
-                      child: ColoredBox(
-                        color: Colors.white,
-                        child: Wrap(
-                          children: [
-                            _attribution(
-                              'OpenFreeMap',
-                              'https://openfreemap.org/',
+                      child: Align(
+                        alignment: Alignment.bottomRight,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: .88),
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(6),
                             ),
-                            _attribution(
-                              '© OpenMapTiles',
-                              'https://openmaptiles.org/',
-                            ),
-                            _attribution(
-                              '© OpenStreetMap',
-                              'https://www.openstreetmap.org/copyright',
-                            ),
-                          ],
+                          ),
+                          child: Wrap(
+                            alignment: WrapAlignment.end,
+                            children: [
+                              _attribution(
+                                'OpenFreeMap',
+                                'https://openfreemap.org/',
+                              ),
+                              _attribution(
+                                '© OpenMapTiles',
+                                'https://openmaptiles.org/',
+                              ),
+                              _attribution(
+                                '© OpenStreetMap',
+                                'https://www.openstreetmap.org/copyright',
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -357,13 +372,22 @@ class _PointLocationCardState extends State<PointLocationCard> {
 
   Widget _attribution(String label, String url) => TextButton(
     style: TextButton.styleFrom(
-      minimumSize: const Size(44, 44),
+      minimumSize: const Size(0, 22),
+      fixedSize: Size.fromHeight(
+        (MediaQuery.textScalerOf(context).scale(10) * 1.2 + 8).clamp(
+          22,
+          double.infinity,
+        ),
+      ),
+      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      visualDensity: VisualDensity.standard,
+      foregroundColor: const Color(0xff4b4b4b),
       side: BorderSide.none,
       backgroundColor: Colors.transparent,
-      padding: const EdgeInsets.symmetric(horizontal: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 2),
     ),
     onPressed: () => openPointLink(context, Uri.parse(url)),
-    child: Text(label, style: const TextStyle(fontSize: 9)),
+    child: Text(label, style: const TextStyle(fontSize: 10, height: 1.2)),
   );
 
   Widget _mapButton(IconData icon, String tooltip, VoidCallback onPressed) =>

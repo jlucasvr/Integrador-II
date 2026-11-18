@@ -215,7 +215,14 @@ void main() {
         final location = tester.getRect(find.text('Onde fica'));
         if (width >= 1024) {
           expect(location.left, greaterThan(items.right));
-          expect(location.top, closeTo(items.top, .1));
+          final hours = tester.getRect(find.text('Quando ir'));
+          final contact = tester.getRect(find.text('Entre em contato'));
+          expect(hours.top, lessThan(items.top));
+          expect(contact.top, greaterThan(hours.bottom));
+          expect(location.top, greaterThan(contact.bottom));
+          expect(find.text('Ver itens'), findsNothing);
+          expect(find.text('Como chegar'), findsNothing);
+          expect(find.text('Contato'), findsNothing);
         } else {
           expect(location.top, greaterThan(items.bottom));
           expect(
