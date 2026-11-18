@@ -13,7 +13,7 @@ class _ActionGlowState extends State<ActionGlow>
     with SingleTickerProviderStateMixin {
   late final AnimationController _glow = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 900),
+    duration: const Duration(milliseconds: 600),
   )..addStatusListener(_onStatus);
   bool _reducedMotion = false;
   bool _looping = false;
@@ -28,7 +28,7 @@ class _ActionGlowState extends State<ActionGlow>
         min: 0,
         max: 1,
         reverse: true,
-        period: const Duration(milliseconds: 1800),
+        period: const Duration(milliseconds: 1000),
       );
     }
   }
@@ -94,6 +94,24 @@ class _PulsePainter extends CustomPainter {
         ..color = const Color(0xff25d366).withValues(alpha: strength)
         ..strokeWidth = 10 + 6 * strength
         ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 10),
+    );
+    final centerX = size.width / 2;
+    final top = -32 + 6 * Curves.easeInOutSine.transform(animation.value);
+    final arrow = Path()
+      ..moveTo(centerX, top)
+      ..lineTo(centerX, top + 18)
+      ..moveTo(centerX - 6, top + 12)
+      ..lineTo(centerX, top + 18)
+      ..lineTo(centerX + 6, top + 12);
+    final arrowPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    canvas.drawPath(
+      arrow,
+      arrowPaint
+        ..color = const Color(0xff292929)
+        ..strokeWidth = 3,
     );
   }
 

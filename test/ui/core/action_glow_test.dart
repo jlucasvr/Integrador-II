@@ -29,7 +29,7 @@ void main() {
     ),
   );
 
-  testWidgets('halo surge, pulsa lentamente e não muda a área de clique', (
+  testWidgets('halo surge, pulsa continuamente e não muda a área de clique', (
     tester,
   ) async {
     var clicked = false;
